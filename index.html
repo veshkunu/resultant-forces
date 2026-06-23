@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resultant of Forces — Simatrix Engineering Mechanics</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Three.js CDN via import map — requires a modern browser with ES module support -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div class="app-shell">
+
+    <!-- ── Main area ─────────────────────────────────────────────────────── -->
+    <div class="main-area">
+
+      <!-- Viewport -->
+      <div class="viewport-wrap" role="img" aria-label="Force diagram">
+        <canvas id="sim-canvas" aria-hidden="true"></canvas>
+
+        <!-- HTML labels — positioned each frame by JS via worldToScreen() -->
+        <div class="scene-labels" aria-hidden="true">
+          <span id="label-x"      class="scene-label scene-label--axis"    style="display:none">X</span>
+          <span id="label-y"      class="scene-label scene-label--axis"    style="display:none">Y</span>
+          <span id="label-origin" class="scene-label scene-label--origin"  style="display:none">O</span>
+          <span id="label-p"      class="scene-label scene-label--p"       style="display:none"></span>
+          <span id="label-q"      class="scene-label scene-label--q"       style="display:none"></span>
+          <span id="label-r"      class="scene-label scene-label--r"       style="display:none"></span>
+          <span id="label-theta"  class="scene-label scene-label--theta"   style="display:none">θ</span>
+          <span id="label-alpha"  class="scene-label scene-label--alpha"   style="display:none"></span>
+        </div>
+
+        <!-- Loading / error overlay — hidden after successful Three.js init -->
+        <div class="empty-state" id="empty-state" aria-hidden="true">
+          <p>Loading simulation…</p>
+        </div>
+      </div>
+
+      <!-- ── Step panel ─────────────────────────────────────────────────── -->
+      <aside class="step-panel" aria-label="Lesson panel">
+
+        <!-- Static learning objective -->
+        <div class="learning-objective" aria-label="Learning objective">
+          <span class="label lo-label">Learning Objective</span>
+          <p class="lo-text">Understand how two concurrent forces combine into a single resultant using the Parallelogram Law and Triangle Law.</p>
+        </div>
+
+        <div class="step-eyebrow">
+          <span class="label" id="step-counter" aria-live="polite" tabindex="-1">Step 1 of 6</span>
+        </div>
+
+        <div class="step-card" id="step-card">
+          <h1 class="step-title" id="step-title"></h1>
+          <p  class="step-lead"  id="step-lead"></p>
+
+          <div class="hint-callout"    id="step-hint"     style="display:none"></div>
+
+          <!-- Equations panel appears from Step 4 — injected by UIManager -->
+          <div class="equations-area"  id="equations-area"></div>
+
+          <!-- Slider controls injected by UIManager per step -->
+          <div class="controls-area"   id="controls-area"></div>
+
+          <div class="guidance-callout" id="step-guidance" style="display:none"></div>
+
+          <!-- Concept insight — Step 6: updates live with angle -->
+          <div class="insight-callout" id="concept-insight" style="display:none" aria-live="polite">
+            <span class="insight-title label">Concept Insight</span>
+            <p data-insight-text></p>
+          </div>
+
+          <!-- Collapsible disclosures -->
+          <details class="step-disclosure" id="concept-panel"     style="display:none"></details>
+          <details class="step-disclosure" id="realworld-callout" style="display:none"></details>
+
+          <!-- Concept-check quick question (Steps with conceptCheck defined) -->
+          <div class="concept-check" id="concept-check" style="display:none"></div>
+
+          <div class="step-actions">
+            <button class="btn-secondary" id="btn-back" aria-label="Go to previous step">Back</button>
+            <button class="btn-primary"   id="btn-next" aria-label="Go to next step">Next →</button>
+          </div>
+        </div>
+
+      </aside>
+
+      <!-- ── Step rail — slim right column, populated by UIManager ─────── -->
+      <nav class="step-rail" aria-label="Lesson steps" role="list"></nav>
+
+    </div><!-- /.main-area -->
+
+    <!-- ── DEV validation panel — visible only when DEV_MODE = true ─────── -->
+    <div class="dev-panel" id="dev-panel" aria-hidden="true" style="display:none">
+      <div class="dev-panel__header">
+        <span class="dev-panel__title">DEV — Math Validation</span>
+        <button class="dev-panel__close" id="dev-panel-close" aria-label="Close dev panel">✕</button>
+      </div>
+      <div class="dev-panel__body" id="dev-panel-body">
+        <!-- Populated by main.js in Phase 5+ when DEV_MODE is true -->
+        <p class="dev-panel__placeholder">Math validation active from Phase 5.</p>
+      </div>
+    </div>
+
+  </div><!-- /.app-shell -->
+
+  <!-- Three.js load-failure detection: if the canvas is still blank after 6 s,
+       the CDN was blocked or the browser does not support import maps. -->
+  <script>
+    setTimeout(function () {
+      var el = document.getElementById('empty-state');
+      if (el && el.style.display !== 'none') {
+        el.removeAttribute('aria-hidden');
+        el.setAttribute('role', 'alert');
+        var p = el.querySelector('p');
+        if (p) {
+          p.textContent = 'The simulation did not load. Check your internet connection, or open this page in Chrome or Firefox.';
+          p.className = 'empty-error';
+        }
+      }
+    }, 6000);
+  </script>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>
