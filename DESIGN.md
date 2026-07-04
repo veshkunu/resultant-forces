@@ -1,294 +1,593 @@
-# DESIGN.md — Resultant of Forces Simulation
+---
+name: Simatrix Guided Stepper — Platform Design System
+description: The single, platform-wide visual contract for every Simatrix guided-stepper engineering simulation. Consolidated at the repository root from the former per-module DESIGN.md / DESIGN.shared.md copies, audited against the live code on 2026-06-27.
+colors:
+  # Canonical CSS custom-property values, verified against Module2/index.html and Module1/src/shell.css.
+  # Token NAME is what appears in code as --color-<name>. "solid-fill" is canonical (NOT "geometry-fill").
+  accent: "#1f66b5"
+  accent-strong: "#17539b"
+  accent-soft: "#e3ecf7"
+  paper: "#faf8f3"
+  panel: "#efebe1"
+  solid-fill: "#e7e1d4"
+  host-white: "#ffffff"
+  ink: "#221f18"
+  ink-secondary: "#564e3c"
+  bench-grey: "#938b7b"
+  border: "#d9d2c3"
+  track: "#cfc8b8"
+  hp-line: "#007f7c"
+  vp-line: "#bc5d1e"
+  pp-line: "#7a5ea6"
+  success: "#2e7d52"
+  success-soft: "#e2efe8"
+  # Module-1-only viewport encodings for the Lines construction aids (see §7).
+  construct: "#8a8275"
+  locus: "#7b4fb5"
+  tl-green: "#1f8a4c"
+  construct-ink: "#5e564a"
+  locus-ink: "#6a3fa3"
+  tl-green-ink: "#166b3c"
+typography:
+  title:  { fontFamily: "Atkinson Hyperlegible, system-ui, sans-serif", fontSize: "1.35rem",  fontWeight: 700, lineHeight: 1.2,  letterSpacing: "-0.01em" }
+  lead:   { fontFamily: "Atkinson Hyperlegible, system-ui, sans-serif", fontSize: "1.125rem", fontWeight: 400, lineHeight: 1.35 }
+  body:   { fontFamily: "Atkinson Hyperlegible, system-ui, sans-serif", fontSize: "1rem",     fontWeight: 400, lineHeight: 1.6 }
+  label:  { fontFamily: "Atkinson Hyperlegible, system-ui, sans-serif", fontSize: "0.75rem",  fontWeight: 700, lineHeight: 1.2,  letterSpacing: "0.07em" }
+  value:  { fontFamily: "IBM Plex Mono, ui-monospace, monospace",       fontSize: "0.875rem", fontWeight: 400, lineHeight: 1.2 }
+rounded:
+  xs: "4px"
+  sm: "6px"
+  md: "10px"
+spacing:
+  "1": "4px"
+  "2": "8px"
+  "3": "12px"
+  "4": "16px"
+  "5": "24px"
+  "6": "32px"
+motion:
+  dur-fast: "150ms"
+  dur-base: "200ms"
+  dur-step: "380ms"
+  ease-standard: "cubic-bezier(0.22, 1, 0.36, 1)"
+---
 
-> **How to use this file.** This document is the **simulation-specific** design appendix for the Resultant Forces simulation. It adds domain encodings and viewport behavior that are specific to this simulation only.
->
-> **This file does not replace DESIGN.shared.md.** All tokens (colors, typography, spacing, radii, components) remain authoritative in DESIGN.shared.md. This file only documents what is added on top of those shared rules.
->
-> Where any rule in this file conflicts with DESIGN.shared.md, DESIGN.shared.md wins.
+# Simatrix — Platform Design System (`DESIGN.md`)
+
+## 1. Purpose and scope of this file
+
+This is the **single, platform-wide visual contract** for every Simatrix guided-stepper engineering
+simulation, across all disciplines (Engineering Graphics, Mechanical, Civil, EEE, CS). It is the
+canonical source for **colour, typography, spacing, radius, base motion, the named design rules, the
+component standards, the North Star, and the do's/don'ts.**
+
+It was **consolidated at the repository root on 2026-06-27** by merging the four former design files —
+`Module1/DESIGN.md`, `Module1/DESIGN.shared.md`, `Module2/DESIGN.md`, `Module2/DESIGN.shared.md` — into
+one, and **auditing every claim against the live code** (`Module2/index.html`, `Module1/src/shell.css`,
+`Module1/src/anim.js`, `Module1/src/engine.js`). Where the old docs disagreed with the code, the **code
+won**, and the change is marked *"Updated from code audit 2026-06-27."*
+
+**Module 2 is the master.** Where the two former `DESIGN.shared.md` copies differed, the Module 2
+version was taken and the Module 1 delta moved into §7 (Module-specific exceptions).
+
+**What's binding for every module:** everything in §2–§6. A control labelled the same way must mean and
+behave the same way in every module (PRODUCT.md Design Principle 3, "one language, many disciplines").
+
+**What each module may add on top:** its own domain encodings and viewport behaviour — documented in §7,
+**not** by re-defining a shared token. **Where this file and a module appendix conflict on a token or a
+named rule, this file wins.** Never hard-code design values in CSS or JS — consume the tokens defined here.
+
+> **Related docs.** Strategic context (users, brand, anti-references, principles, accessibility) lives in
+> each module's `PRODUCT.md`. Module 1's deep **premium-interaction implementation** spec (Compare-View
+> state machine, cinematic-fold camera orchestration, chrome-injection contract, Problem Library) lives in
+> `Module1/DESIGN.md`; this root file carries only the parts of it that are design-system standards (the
+> motion palette, the z-index ladder, the press conventions, the component specs). Enforcement rules are in
+> `../RULES.md`; the reasoning behind decisions is in `../DECISIONS.md`.
 
 ---
 
-## 1. Force Color Encodings
+## 2. Color system
 
-These encodings extend the shared Mechanics Functional Colors from DESIGN.shared.md.
+**Creative North Star: "The Patient Tutor's Paper."** This is the surface a warm one-on-one tutor sketches
+on, beside an anxious first-year who is sure they are "bad at this." Warm off-white drafting paper with
+dark warm-grey ink, deliberately not clinical, because warmth lowers intimidation. The chrome is
+near-monochrome and quiet so the only things that raise their voice are the **content in the viewport** and
+the single **ink-blue accent** that walks the learner from one step to the next. Saturated colour is
+rationed to two jobs and two only: the functional engineering encodings inside the scene, and the one blue
+accent that guides attention through the wizard.
 
-| Force | CSS Variable | Hex Value | Source |
-|-------|-------------|-----------|--------|
-| Force P (applied) | `--color-force-p` | `#c0392b` | DESIGN.shared.md Applied Force |
-| Force Q (applied) | `--color-force-q` | `#bc5d1e` | DESIGN.shared.md VP Amber |
-| Resultant R | `--color-force-resultant` | `#546e7a` | DESIGN.shared.md Resultant Force |
-| Construction lines | `--color-construction` | `#938b7b` | DESIGN.shared.md Bench Grey |
+### 2.1 The token table (verified against code)
 
-**Rationale for P and Q distinction:**
+Every value below is the **live CSS custom property** in `Module2/index.html` (`:root`) and
+`Module1/src/shell.css` (`:root`). The two files were confirmed **identical** for every shared `--color-*`
+token. Authored in OKLCH for intent, stored as resolved sRGB hex because `THREE.Color` cannot parse
+`oklch()`.
 
-P and Q are both applied forces but must be visually distinct at all times. P uses the standard Applied Force red. Q uses VP Amber, which is already defined in the shared design system and is color-blind-safe alongside red (amber and red are distinguishable even under deuteranopia through their warm-to-cool relationship on screen).
+| Token (`--color-…`) | Value | OKLCH intent | Semantic meaning |
+|---|---|---|---|
+| `paper` | `#faf8f3` | 0.985 0.008 90 | App + viewport background; raised control fills. |
+| `panel` | `#efebe1` | 0.95 0.009 90 | Wizard / dock surface, one tonal step below paper. |
+| `solid-fill` | `#e7e1d4` | 0.90 0.013 88 | Rendered 3D geometry faces, light enough that dark ink edges read. **Canonical name is `solid-fill`** — see §8. |
+| `host-white` | `#ffffff` | — | The one allowed pure white: host-blend floating cards/chips (Host-Integration White Exception, §4.4). Never read into the 3D scene. |
+| `ink` | `#221f18` | 0.24 0.012 80 | Primary text + visible geometry edges (~16:1 on paper). |
+| `ink-secondary` | `#564e3c` | 0.44 0.016 80 | Secondary text, leads, helper copy. |
+| `bench-grey` | `#938b7b` | 0.62 0.012 88 | Hidden-edge linework, reference grids, inactive linework, disabled lock cue. |
+| `border` | `#d9d2c3` | 0.865 0.012 88 | Crisp 1px structural seams and dividers. |
+| `track` | `#cfc8b8` | 0.83 0.013 88 | Recessed slider groove, one step below border. |
+| `accent` | `#1f66b5` | 0.52 0.14 252 | The one interaction accent: current step, primary action, selection, slider fill, focus ring (~5.6:1 on paper). |
+| `accent-strong` | `#17539b` | 0.45 0.14 252 | Accent hover / active. |
+| `accent-soft` | `#e3ecf7` | 0.94 0.025 252 | Current-step pill, hint callouts, term popovers. |
+| `success` | `#2e7d52` | 0.56 0.10 158 | A completed step — **always** with a check glyph, never colour alone. |
+| `success-soft` | `#e2efe8` | 0.94 0.03 158 | Completion-state wash. |
+| `hp-line` (HP Teal) | `#007f7c` | 0.53 0.11 192 | Horizontal-Plane projection (top view), drawn **solid**. Held off blue (~4.57:1). |
+| `vp-line` (VP Amber) | `#bc5d1e` | 0.58 0.12 55 | Vertical-Plane projection (front view), drawn **dashed**. Teal↔amber is the CVD-safe pair (~4.19:1). |
+| `pp-line` (PP Violet) | `#7a5ea6` | 0.55 0.10 305 | Profile-Plane projection (side view), the third plane. Held off chrome blue (h305 vs 252) and clear of teal/amber (~4.5:1). **Actively used in Module 2; defined-but-unused in Module 1 — see §7/§8.** |
 
-**The Chrome-Only Blue Rule from DESIGN.shared.md is strictly enforced:**
+**Derived / non-colour tokens** also live in `:root` and are part of the contract:
+`--color-focus` (= `--color-accent`), `--ring-focus` (`0 0 0 3px color-mix(in srgb, var(--color-accent) 26%, transparent)` — the focus/drag halo), and `--shadow-md` (`0 4px 16px color-mix(in srgb, var(--color-ink) 12%, transparent)` — the transient-overlay shadow).
+*(Added from code audit 2026-06-27 — these existed in code but were only described as prose concepts in the old docs.)*
 
-Blue (`--color-accent`) must never appear on any force arrow, parallelogram line, or construction element inside the viewport. Blue belongs only to UI chrome: the step rail, the Next button, slider fill, and focus rings.
+### 2.2 Module-1 construction-aid encodings (Lines sim)
 
----
+*(New section — added from code audit 2026-06-27. These tokens exist in `Module1/src/shell.css` and are
+used by the Lines sim's Traces / True-Length constructions, but no previous design doc listed them.)*
 
-## 2. Force Arrow Visual Rules
+| Token | Value | Meaning |
+|---|---|---|
+| `--construct` | `#8a8275` | Neutral drafting-aid grey — construction / projector lines. |
+| `--locus` | `#7b4fb5` | Violet — rotation-locus arcs (held off the chrome blue). |
+| `--tl-green` | `#1f8a4c` | Green — the true-length result line (distinct from `--color-success`). |
+| `--construct-ink` | `#5e564a` | Darker construct grey — small inline text. |
+| `--locus-ink` | `#6a3fa3` | Darker locus violet — small inline text. |
+| `--tl-green-ink` | `#166b3c` | Darker true-length green — small inline text. |
 
-### Force P
+These are **Module-1-only** viewport encodings (§7). They are real tokens (so the engine's `readTokens`
+and the page CSS share one source — no hard-coded hex), and they obey the Two-Cue Rule with their own
+dash/label cues.
 
-- Style: solid thick mesh arrow (shaft + cone)
-- Color: `--color-force-p`
-- Shaft radius: `0.040` scene units
-- Head radius: `0.115` scene units
-- Label: `P` at tip, offset outward
+### 2.3 The named colour rules (binding everywhere)
 
-### Force Q
+**The Quiet Chrome Rule.** The blue accent covers at most ~10% of any screen. If more than a tenth of the
+chrome is blue, it is overused: the eye must land on the viewport, not the UI.
 
-- Style: solid thick mesh arrow (shaft + cone)
-- Color: `--color-force-q`
-- Shaft radius: `0.040` scene units
-- Head radius: `0.115` scene units
-- Label: `Q` at tip, offset outward
+**The Chrome-Only Blue Rule.** Blue belongs to the guidance layer (steps, actions, focus) and never appears
+as a domain colour inside the viewport. The drawing uses the functional encodings (e.g. HP teal, VP amber).
+This separation is non-negotiable: it lets a learner tell "the UI is guiding me" from "this is the domain
+content," even on a washed-out projector.
 
-### Resultant R
-
-- Style: solid thick mesh arrow, visually heavier than P and Q
-- Color: `--color-force-resultant`
-- Shaft radius: `0.060` scene units (1.5× P and Q)
-- Head radius: `0.150` scene units (1.3× P and Q)
-- Label: `R` at tip, offset outward
-- Second cue beyond color: R is always visually thicker and its label always shows a numeric value (e.g. `R = 173 N`)
-
-### Parallelogram Ghost Lines
-
-- Style: dashed line arrow (dashed shaft + solid small arrowhead)
-- Color: `--color-construction`
-- Dash size: `0.18` scene units, gap size `0.09` scene units
-- Opacity: `0.55` — clearly secondary, never competing with P, Q, R
-- Not draggable. Never interactive.
-
-### Angle Arc (θ between P and Q)
-
-- Style: solid thin arc
-- Color: `--color-bench-grey`
-- Opacity: `0.70`
-- Radius: `0.55` scene units
-- Suppressed when θ < 1° or θ > 179°
-
----
-
-## 3. Tugboat Scene (Step 1)
-
-Step 1 shows the narrative illustration, not the force diagram.
-
-The tugboat scene must:
-
-- Show two simple boat silhouettes (flat 2D polygon shapes)
-- Use `--color-geometry-fill` for boat fill, `--color-ink` for boat outline
-- Show a ship silhouette at the center
-- Show two force arrows: one labeled P in red, one labeled Q in amber
-- Use exactly the same arrow style as the rest of the simulation (thick mesh arrows)
-- Use a dashed line to suggest the combined direction of movement
-- Not use any photograph, raster image, or external asset
-
-The boats and ship are geometric approximations — not detailed illustrations.
-
-### Tugboat Scene Color Rules
-
-| Element | Color |
-|---------|-------|
-| Boat fill | `--color-geometry-fill` |
-| Boat outline | `--color-ink` |
-| Ship fill | `--color-panel` |
-| Ship outline | `--color-ink-secondary` |
-| Force P arrow | `--color-force-p` |
-| Force Q arrow | `--color-force-q` |
-| Direction suggestion dashes | `--color-bench-grey` |
+**The Two-Cue Rule.** No colour carries meaning alone. Every functional encoding pairs its hue with a second
+cue — line weight, dash pattern, label, icon, arrow direction, or shape. HP is teal **plus solid weight plus
+an "HP" label**; VP is amber **plus dashed weight plus a "VP" label**; PP is violet **plus its "PP" label
+plus its position** in the unfolded layout. Success is green **plus a check**. Disabled is faint **plus
+reduced opacity plus a lock icon**.
 
 ---
 
-## 4. Scene Layout
+## 3. Typography
 
-The viewport uses an orthographic camera (2D, no perspective distortion).
+**Body / UI font:** **Atkinson Hyperlegible** (fallback `system-ui, -apple-system, BlinkMacSystemFont,
+"Segoe UI", Roboto, sans-serif`), bundled as subset `woff2`.
+**Numeric font:** **IBM Plex Mono** (fallback `ui-monospace, "SF Mono", "Cascadia Mono", "Segoe UI Mono",
+Consolas, "Liberation Mono", monospace`), bundled alongside.
 
-### Origin Position
+These two are the **only** fonts loaded anywhere. **No external font CDN** (Google Fonts, Typekit, etc.) is
+referenced in any module — confirmed by audit.
 
-The origin (where P and Q act) sits at the center of the viewport.
+### 3.1 Where the fonts are hosted
 
-This allows the resultant R to point into any quadrant without clipping.
+Bundled `woff2`, loaded via `@font-face` with `font-display: swap`. Three faces only:
+Atkinson Hyperlegible 400, Atkinson Hyperlegible 700, IBM Plex Mono 400. The files
+(`atkinson-hyperlegible-latin-400-normal.woff2`, `…-700-normal.woff2`,
+`ibm-plex-mono-latin-400-normal.woff2`) live in each module's **`assets/fonts/`** and are present in both.
 
-### Force Length Scaling
+- **Module 2:** `@font-face` is declared in `index.html`; URLs are `./assets/fonts/…` (the HTML is at the
+  module root).
+- **Module 1:** `@font-face` is declared in `src/shell.css`; because the stylesheet lives one level down in
+  `src/`, its URLs are **`../assets/fonts/…`**. *(Module-specific path detail, §7 — not a violation.)*
 
+### 3.2 When each font is used (hierarchy)
+
+| Role | Font / weight | Size · line-height · tracking | Where |
+|---|---|---|---|
+| **Title** | Atkinson 700 | `1.35rem` · 1.2 · `-0.01em` | The step title — the tutor's headline for the current idea. |
+| **Lead** | Atkinson 400 | `1.125rem` · 1.35 | The step's one-sentence explanation under the title. |
+| **Body** | Atkinson 400 | `1rem` · 1.6 | Instructions, notes, hint copy. Comfortable measure; never below caption size. |
+| **Label** | Atkinson 700 | `0.75rem` · 1.2 · `0.07em`, uppercase | Group titles (`.dock__group-title`) — the engineering-software register. |
+| **Value** | IBM Plex Mono 400 | `0.875rem` · 1.2, tabular figures | Every live numeric readout with its unit, plus precise text entry. |
+| **Step eyebrow** | IBM Plex Mono 400 | `0.75rem` · 1.2 · `0.07em`, uppercase | The "Step X of N" step indicator (`.card__eyebrow`), colour `--color-ink-secondary`. A **mono micro-label** — deliberately **not** the Atkinson-700 Label role. *(Split out from Label, code audit 2026-07-02: `.card__eyebrow` sets `font-family: var(--font-mono)` at the inherited 400 weight, with no `font-weight` override — not Atkinson 700.)* |
+
+(These map to the code tokens `--text-title / --text-lead / --text-base / --text-xs / --text-sm`.)
+
+### 3.3 The named type rules
+
+**The Two-Weight Rule.** Atkinson ships Regular (400) and Bold (700) only. Build hierarchy from size and the
+700 bold, never from a 500/600 weight that does not exist.
+
+**The Tabular Rule.** Every value the math depends on is set in IBM Plex Mono with
+`font-variant-numeric: tabular-nums`, so a value does not shift width as it updates. Showing real values in
+real units is the line between an engineering instrument and a toy.
+
+---
+
+## 4. Spacing and layout principles
+
+### 4.1 Spacing & radius scale (verified against code)
+
+- **Spacing (4px base):** `--space-1: 4px` · `--space-2: 8px` · `--space-3: 12px` · `--space-4: 16px` ·
+  `--space-5: 24px` · `--space-6: 32px`.
+- **Radius:** `--radius-xs: 4px` (crisp control corners — checkbox, inputs) · `--radius-sm: 6px` (buttons) ·
+  `--radius-md: 10px` (cards). Pills use `999px`.
+
+Every surface is soft (generous radii, airy spacing) so nothing feels crowded, and every interactive target
+is at least **44px**.
+
+### 4.2 Elevation — flat by conviction
+
+Engineering drawings are ink on a surface, so depth is conveyed by **tonal layering** (paper → panel →
+solid-fill) and **1px hairline borders**, not by shadows. Rendered geometry never casts a shadow. Shadows
+exist only as a thin exception for transient overlays that must float above the page.
+
+- **Overlay shadow** (`--shadow-md` = `0 4px 16px color-mix(in srgb, var(--color-ink) 12%, transparent)`):
+  warm-tinted, soft. Used only on transient surfaces that leave the flow — the term-definition popover, the
+  orbit-hint chip, the mobile banner.
+- **Focus halo** (`--ring-focus` = `0 0 0 3px color-mix(in srgb, var(--color-accent) 26%, transparent)`): a
+  diffuse accent ring on focused/dragged controls, derived from the accent so it stays a single source.
+
+**The Flat-Ink Rule.** Surfaces are flat at rest. Never cast a shadow on rendered geometry, and never use
+elevation as decoration. If a shadow is not lifting a transient overlay off the page, it is wrong.
+
+**The Border-Over-Shadow Rule.** Structure comes from a single crisp hairline (`#d9d2c3`), not a drop
+shadow. Cards and panels are separated by tone and seam, not by float.
+
+**The Host-Integration White Exception.** A module embedded via iframe in a predominantly white host site
+may paint its **top-level floating cards and chips** pure white (`#ffffff`, exposed as the single
+`--color-host-white` token) so they blend with the host page — overriding the no-`#fff` rule for those
+surfaces only. The base surfaces stay warm cream (`--color-paper` and `--color-panel` are never whitened),
+and a white card keeps the standard `#d9d2c3` hairline so its seam reads crisp without a shadow
+(Border-Over-Shadow still holds — the larger panel→white tonal jump *strengthens* the separation). It is a
+deliberate, narrowly-scoped carve-out; never use a bare `#fff`/`#000` literal — always consume the token.
+*(Per-module application lists moved to §7.)*
+
+### 4.3 The z-index ladder
+
+*(Promoted to a platform standard from `Module1/DESIGN.md` — added here from code audit 2026-06-27. The old
+shared doc had no layering section; Module 2's `index.html` defines only the two rungs it needs.)*
+
+A single ordered ladder so transient layers never fight. **Never hard-code a `z-index` — reference the
+token.** The full ladder is defined in `Module1/src/shell.css :root`:
+
+| Token | Value | What lives here |
+|---|---|---|
+| `--z-term` | 60 | Term-definition popover (`#term-pop`) |
+| `--z-compare` | 90 | Compare-card frame (`#compare-card`) — Module 1 |
+| `--z-notice` | 100 | Mobile notice banner (`#mobile-note`) |
+| `--z-overlay` | 120 | Full-viewport modal — the Problem Library (`#problem-library`) |
+| `--z-toast` | 130 | Success toast (`#sim-toast`) |
+| `--z-restoring` | 150 | WebGL context-lost "Restoring 3D view…" chip (`#sim-context-lost`) |
+| `--z-boot` | 200 | Boot diagnostic (`#boot-error`) — must sit above everything |
+
+**Module 2** currently defines only `--z-notice: 100` and `--z-overlay: 120` (it has no Compare card, toast,
+or context-lost chip in that form). The Compare canvas floats just above its own frame by a non-token
+constant (`CARD_Z = 91`, its CSS2D label overlay `92`) — both below `--z-notice`, so the mobile banner and
+page-level modals still escape over the card.
+
+### 4.4 The no-transform invariant (Module 1, dual-mode)
+
+`#sim-viewport`, `#canvas-area`, and `body` must stay **transform-free**. Module 1's Compare card floats its
+`#c2d` canvas `position:fixed` from measured viewport rects; a CSS `transform` on any ancestor would
+establish a containing block and break that placement. Treat these three elements as transform-free zones.
+*(Module-1-specific; documented in full in `Module1/DESIGN.md`.)*
+
+### 4.5 Wizard layout — the right-hand column (verified against code)
+
+*(New section — added from code audit 2026-07-02, grounded in `Module2/index.html`.)*
+
+The guided stepper lives in a **fixed-width vertical column pinned to the right**, beside the loud 3D
+viewport on the left. This is the shared layout shape for every guided-stepper sim.
+
+- **Split:** `body { display: flex; flex-direction: row }`. The **viewport** is the flexible left pane
+  (`#sim-viewport { flex: 1 1 0; order: 1 }`); the **wizard** is the fixed right column
+  (`#wizard { flex: 0 0 auto; width: clamp(340px, 34vw, 460px); height: 100%; order: 2; display: flex;
+  flex-direction: column }`), separated by a single 1px `border-left` (`--color-border`) — a flat seam,
+  no shadow (Border-Over-Shadow, §4.2).
+- **Background mandate (strict):** the **3D viewport background is `var(--color-paper)` (`#faf8f3`)** and
+  the **wizard panel background is `var(--color-panel)` (`#efebe1`)** — one tonal step below paper. These
+  are non-negotiable: never hard-code the hex, never swap the two tones, and never paint the viewport in
+  the panel tone or vice-versa. (The step card floats one step higher on `--color-host-white`; §4.4, §5.5.)
+- **Wizard contents (module-scoped):**
+  - **Module 2** (master): the column is the `#active-problem` header (shown only while a textbook problem
+    is loaded) stacked **above** a `.wizard-main` row; that row is itself `flex-direction: row` with the
+    step card (`#step-card`, left) beside the step rail (`#step-rail`, right). Module 2's wizard has **no**
+    `.brand` wordmark and **no** `.chapnav` switcher.
+  - **Module 1:** additionally carries the `.brand` wordmark and the `.chapnav` chapter switcher at the top
+    of the column — these two classes are **Module-1-specific**, not part of the shared wizard shell.
+
+---
+
+## 5. Component standards
+
+Every component consumes tokens, carries soft radii, meets a 44px target, shows a visible focus ring, and
+pairs any colour signal with a second cue.
+
+### 5.1 Buttons
+
+- **Shape:** softly rounded (`6px`, `--radius-sm`), height at least 44px.
+- **Typography:** `font: inherit` — buttons render in **Atkinson 400** (the body weight). **Never** bump a
+  button to 700 or synthesize bold; button hierarchy comes from fill and colour, not weight (Two-Weight
+  Rule, §3.3). *(Code audit 2026-07-02: `.btn { font: inherit }`, with no `font-weight` on `.btn`,
+  `.btn--primary`, `.btn--ghost`, or `.btn--nav`.)*
+- **Primary:** Technical Blue fill (`#1f66b5`) with paper text — the one loud action per step (Add, Next,
+  Draw, Flatten). **Hover** deepens to `#17539b`.
+- **Press / Active:** **`transform: scale(0.97)`**, easing back over `--dur-fast` — the one press language
+  shared by every pressable control (primary, secondary, ghost, chip alike), always gated by
+  `:not(:disabled)`.
+  > **Updated from code audit 2026-06-27.** The former `DESIGN.shared.md` said "Active nudges down 1px
+  > (transform only)." The actual code in **both** modules uses `transform: scale(0.97)` (e.g.
+  > `Module2/index.html` `.btn:active`, `Module1/src/shell.css` `.btn--primary:active`). Module 2's own
+  > `DESIGN.md` already said `scale(0.97)`; the shared copy had not been updated.
+- **Secondary:** paper fill with a hairline border and ink text (Back).
+- **Ghost:** text-only ink-secondary, transparent at rest (Reset, dismiss). Reset always routes through
+  `window.simAPI.reset()`; there is no second reset path — and it is **guarded by an inline two-state
+  confirm** ("Reset everything? · Yes / Cancel"): the first click arms the prompt and steps Back/Next
+  aside, and only **Yes** fires the reset. A single-click wipe is forbidden (RULES.md §4.19).
+- **Focus:** the accent focus halo, never removed.
+
+### 5.2 Sliders
+
+- **Track:** a thin 4px recessed groove in Track grey (`#cfc8b8`), pill-rounded; the travelled portion fills
+  with the accent (WebKit via the `--p` custom property; Firefox via `::-moz-range-progress`).
+- **Thumb:** a 16px accent knob with a 2px paper gap-ring and a hairline edge, flat at rest; the diffuse halo
+  appears only on hover/focus/drag.
+- **Hit area:** the full 44px row is draggable even though the track reads as a thin line.
+- **Readout:** an IBM Plex Mono tabular value sits beside every slider with its unit; arrow keys step by 1,
+  finer on Shift.
+
+### 5.3 Inputs / fields
+
+- **Numeric input:** IBM Plex Mono tabular, right-aligned, paper fill, hairline border, `4px` radius. Precise
+  textbook entry; invalid text reverts to the last valid value, never an alarming red.
+- **Select:** full-width, 44px tall, paper fill with a baked inline chevron, hairline border.
+
+### 5.4 Toggles
+
+- **Style:** a custom 18px drafting-square checkbox (not a consumer switch). Empty box versus a filled accent
+  box with a paper tick is a shape cue, not colour alone.
+- **Disabled by hierarchy:** reduced opacity with a small padlock icon at the row's end — reads as "locked
+  for now," not broken. Use this pattern wherever a module needs mutually-exclusive control hierarchies (one
+  mode disables another; e.g. Module 2's rotation hierarchy).
+
+### 5.5 Cards / containers (panels)
+
+- **Step card:** paper surface (or `--color-host-white` where the Host-White Exception applies), `10px`
+  (`--radius-md`) corners, hairline border, `24px/16px` padding. Holds only the current step's controls;
+  content swaps with a short fade + translate (`panelIn`, `--dur-step` = 380ms).
+- **Strategy:** no shadow (hairline border instead); cards are never nested.
+- **Wizard shell:** the right-hand stepper panel (`--color-panel`; full layout in §4.5). In **Module 2**
+  it holds the `#active-problem` header above a `.wizard-main` row (the step card beside the step rail).
+  The `.brand` wordmark and `.chapnav` chapter switcher are **Module-1-specific** additions (§4.5), not
+  present in Module 2's wizard.
+
+### 5.6 Step rail (signature)
+
+A vertical numbered spine of the wizard. **Completed** = a Success-green disc with a check glyph and
+ink-secondary label; **Current** = a filled accent disc with a soft-accent halo and bold ink label;
+**Upcoming** = a hollow, faint disc. The shape (filled / check / hollow) **plus the number** carries state
+without relying on colour. A live region announces "Step X of N" on change. Learners may revisit any step up
+to `maxReached`; upcoming steps stay disabled.
+
+### 5.7 Inline term definition (signature)
+
+First appearance of engineering vocabulary (HP, VP, orthographic projection, ground line — plus each
+module's own terms) is a **dotted-underline accent button**. On hover, keyboard focus, or tap it reveals a
+small accent-wash popover (`#e3ecf7`, ink text, `6px` radius, overlay shadow) defining the term in plain
+language; screen readers get it via `aria-describedby`. The popover is `position: fixed` so it escapes the
+card's scroll clip, flips above when there is no room below, and dismisses on Escape.
+
+### 5.8 Hint callout
+
+A persistent accent-wash box with a line info icon, for guidance that helps when a step might confuse. **Full
+background tint, never a coloured side-stripe border.**
+
+### 5.9 Viewport aids
+
+- **Geometry / vertex label:** a small paper pill in IBM Plex Mono, nudged outward off the linework so it
+  never sits on top of it.
+- **Empty-state overlay:** a faint wireframe glyph with "Your drawing/solid will appear here" (adapt copy per
+  module), shown until the first content is added. Quiet, no card, never blocks.
+- **Orbit hint:** for 3D viewports, a one-time dismissible chip ("Drag to rotate the view") shown with the
+  first content; auto-dismisses on the first view drag.
+
+### 5.10 Motion palette & press conventions
+
+CSS keyframes live in the stylesheet; JS-driven motion uses a small rAF tween system (`anim.js`) with a
+**no-overshoot** named easing palette (`y1, y2 ∈ [0,1]`). **Everything collapses to instant under
+`@media (prefers-reduced-motion: reduce)`** — the simulation still updates to its end state; only motion is
+suppressed.
+
+**Shared base motion tokens (both modules):** `--dur-fast: 150ms`, `--dur-base: 200ms`,
+`--dur-step: 380ms`, `--ease-standard: cubic-bezier(0.22, 1, 0.36, 1)`. *(Added from code audit — present in
+code but not enumerated in the old shared doc.)*
+
+**JS easing curves (Module 1, `src/anim.js`)** — verified against code, all match exactly:
+
+| Curve | Bézier | Role |
+|---|---|---|
+| `easeStandard` | `0.22, 1, 0.36, 1` | Matches `--ease-standard` exactly; the tween **default** (so the clip-aware auto-zoom dolly uses it), and the `restorePerspective` ortho→perspective glide. |
+| `easeFold` | `0.83, 0, 0.17, 1` | Symmetric "physical hinge" — the fold + held-angle dolly + ortho quick-view morph. |
+| `easeCamera` | `0.76, 0, 0.24, 1` | Weighted accelerate-then-settle — the legacy quick-view snap + the legacy fold camera tween + the flat-view pan. |
+| `easeDraw` | `0.25, 1, 0.5, 1` | Gentle ease-out — the projection draw-on ramp. |
+| `easeDissolve` | `0.5, 0, 0.75, 0` | Accelerating ease-in (used as `1 − easeDissolve(t)`) — the 3D body dissolving into its flat drawing. |
+
+**Key durations (Module 1, verified):** step-card swap `380ms` (`--dur-step`); projection draw-on `800ms`
+(`easeDraw`); quick-view camera move `1500ms`; success toast hold `2600ms`; flow-note/spotlight hold `4500ms`
+(240ms fade); cinematic fold `2800ms` (`FOLD_DURATION`, split `0.72`); **clip-aware auto-zoom dolly `500ms`
+using `easeStandard`.**
+  > **Updated from code audit 2026-06-27.** The former `Module1/DESIGN.md` claimed the auto-zoom was
+  > "`AUTO_ZOOM_MS = 520ms (easeCamera)`." Code is `AUTO_ZOOM_MS = 500` (`engine.js:85`) and the dolly passes
+  > no `ease`, so it uses the tween default `easeStandard` — not `easeCamera`. Both the duration and the curve
+  > attribution were stale.
+
+**Press & hover conventions.** Every pressable control shares the `scale(0.97)` press (§5.1). Every
+hover-only rule is wrapped in `@media (hover:hover) and (pointer:fine){…}` so touch devices never get a stuck
+hover after a tap; `:focus-visible` and `:active` rules stay **outside** the gate. A global
+`:focus-visible { outline:none; box-shadow: var(--ring-focus) }` is the default and is never removed.
+
+### 5.11 Scrollbars
+
+Scroll containers show a **floating, padded scrollbar pill** — never a hidden scrollbar. A hidden bar
+(`scrollbar-width: none`) fails *Visibility of System Status*: the learner gets no cue that content
+continues below the fold. The pill is deliberately quiet (Quiet Chrome, §2.3) but present.
+
+- **Shape:** the WebKit channel is **10px**, but the thumb carries a **3px transparent border +
+  `background-clip: padding-box`**, so only the inner **~4px** paints and the pill floats 3px clear of
+  both edges (the container's paper shows through the border). `border-radius: 999px`; **transparent
+  track; no native arrow buttons.**
+- **Tint:** thumb is **`--color-border`** (`#d9d2c3`, ~1.28:1 on the card paper — faintly visible). Read
+  the token, never hard-code (§6.2). *`--color-panel` (~1.12:1) is too invisible; `--color-bench-grey` is
+  too loud — both were tried and rejected (ADR-032).*
+- **Firefox:** `scrollbar-width: thin` + `scrollbar-color: var(--color-border) transparent`, scoped to an
+  **`@supports (-moz-appearance: none)`** guard (the padding-box floating trick has no Firefox equivalent).
+- **⚠️ Load-bearing gotcha:** leave `scrollbar-width` **UNSET on the base rule.** Declaring it
+  unconditionally makes **Chrome 121+** disable the `::-webkit-scrollbar` pseudo-elements and fall back to
+  its native ~11px bar with arrow buttons — the floating pill is lost. That is why `scrollbar-width` is set
+  **only** inside the Firefox `@supports` block.
+
+```css
+/* Canonical pattern (swap SELECTOR; see ADR-032). */
+SELECTOR::-webkit-scrollbar { width: 10px; }
+SELECTOR::-webkit-scrollbar-track { background: transparent; }
+SELECTOR::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  background-clip: padding-box;
+  border: 3px solid transparent;
+  border-radius: 999px;
+}
+@supports (-moz-appearance: none) {
+  SELECTOR { scrollbar-width: thin; scrollbar-color: var(--color-border) transparent; }
+}
 ```
-FORCE_SCALE = 0.015  // scene units per Newton
-              (100 N → 1.5 scene units)
-```
 
-This is slightly smaller than vector-resolution (0.02) because two arrows plus the parallelogram construction need more viewport space.
-
-### Viewport Grid
-
-A light grid is shown in Steps 2–6 to help the student read direction angles.
-
-Grid color: `--color-border` at 38% opacity (same as vector-resolution).
+**Applied in:** `graphics_module_1_topic_1_foundations` (`.card__scroll`); Module 2 master (`Module2/`:
+`#step-card`, `.problem-library__body`); intro topic (`graphics_module_2_topic_1_introduction/`:
+`#shape-rail`, `#anatomy-panel`).
 
 ---
 
-## 5. HTML Overlay Labels
+## 6. Cross-module consistency rules (must be identical everywhere)
 
-Labels appear as absolutely-positioned HTML elements over the canvas, positioned using the worldToScreen() projection utility.
+These are binding in every module and every deployed topic copy. **This file is the single source; where a
+module appendix conflicts on a token or named rule, this file wins.**
 
-### Label Style
+1. **Tokens are identical.** Every shared `--color-*`, `--space-*`, `--radius-*`, `--font-*`, `--dur-*`,
+   `--ease-*` token has the exact value in §2–§5. Verified: `Module1/src/shell.css` and
+   `Module2/index.html` agree on all shared tokens. A module may **add** tokens (§7) but must never
+   **re-define** a shared one to a new value.
+2. **Read colours at runtime, never hard-code hex.** JS and Three.js materials read the live token via
+   `getComputedStyle(document.documentElement).getPropertyValue('--token').trim()` (Module 2) or the engine's
+   `readTokens()` → `COL` map (Module 1). *(ADR-003.)* The audit found **zero** hard-coded colour hex in any
+   `src/` JS in either module. The single deliberate exception is Module 1's pre-CSS boot diagnostic (§7/§8).
+3. **The named rules are binding:** Quiet Chrome, Chrome-Only Blue, Two-Cue (§2.3); Two-Weight, Tabular
+   (§3.3); Flat-Ink, Border-Over-Shadow, Host-Integration White Exception (§4.2).
+4. **44px minimum target** with a visible accent focus halo on every interactive control.
+5. **`prefers-reduced-motion` collapses all motion to instant**, but state still updates to the end value.
+6. **One press language:** `transform: scale(0.97)` on `:active` for every pressable control (§5.1).
+7. **The guided-stepper model** (one idea per step, controls revealed only when their step needs them, the
+   vertical numbered rail, "Step X of N" live region) is the shared interaction shape.
 
-All scene labels follow the shared Geometry Label component from DESIGN.shared.md:
-- Font: IBM Plex Mono (`--typography-value`)
-- Background: `--color-paper` with slight opacity
-- Text: `--color-ink`
-- Padding: `2px 5px`
-- Rounded: `--radius-xs`
+### 6.1 Do's and Don'ts
 
-### Label Content
+**Do:**
+- Keep the blue accent to ~10% of the chrome and let the viewport be the loud subject.
+- Keep blue in the chrome only; viewport meaning uses the domain encodings (HP teal `#007f7c`, VP amber
+  `#bc5d1e`, PP violet `#7a5ea6`).
+- Pair every colour signal with a second cue (dash, weight, label, icon, arrow, shape).
+- Read every colour from a CSS custom property; JS/Three.js read the live token, never a hard-coded hex.
+- Convey depth with tonal layering (paper → panel → solid-fill) and 1px hairlines.
+- Keep every interactive target ≥ 44px with a visible accent focus halo.
+- Build type hierarchy from size and the 700 bold; set all numerics in IBM Plex Mono tabular.
+- Collapse all motion to instant under `prefers-reduced-motion`; the simulation still updates.
 
-| Label ID | Content | When shown |
-|----------|---------|------------|
-| `label-p` | `P = {N} N` | When P > 0 |
-| `label-q` | `Q = {N} N` | When Q > 0 |
-| `label-r` | `R = {N} N` | When R is visible |
-| `label-theta` | `θ = {°}°` | When arc is visible |
-| `label-alpha` | `α = {.1}°` | When R is visible (Step 4+) |
-| `label-x` | `X` | Always (axes visible) |
-| `label-y` | `Y` | Always (axes visible) |
-| `label-origin` | `O` | Always (axes visible) |
-
-### Label Offset Rules
-
-- Force tip labels: offset outward from origin by `0.30` scene units along the force direction
-- θ label: placed at the midpoint of the angle arc, at 1.05× arc radius
-- α label: placed on the other side of R from θ label, same offset style
-
----
-
-## 6. Equations Panel
-
-The equations panel appears from Step 4 onward.
-
-### Equations shown
-
-```
-P = {value} N
-Q = {value} N
-θ = {value}°
-
-R = √(P² + Q² + 2PQ cos θ)
-R = {value} N
-
-α = arctan(Q sin θ / (P + Q cos θ))
-α = {value}°
-```
-
-### Panel structure
-
-- Title: `RESULTANT EQUATIONS` in Label typography (uppercase, 700, 0.75rem)
-- Values: IBM Plex Mono, `tabular-nums`, right-aligned
-- The formula row shows the symbolic formula above the computed value
-- `aria-live="polite"` on the container so screen readers announce updates
+**Don't:**
+- Put blue linework inside the viewport, or let a functional encoding read as the chrome accent.
+- Use gamified edtech devices: no mascots, confetti, badges, streaks, points, or cartoon geometry.
+- Drift glossy or architectural-viz: no glassmorphism, PBR renders, soft consumer gradients, or
+  drop-shadow-heavy cards.
+- Reach for marketing-site polish: no gradient text, `background-clip: text`, hero imagery, or parallax.
+- Default to dark IDE chrome or expose every control at once (the overwhelming dashboard the stepper replaces).
+- Use `border-left`/`border-right` greater than 1px as a coloured accent stripe; use a full background tint
+  or a leading icon.
+- Cast a shadow on rendered geometry, or use a shadow anywhere except a transient floating overlay.
+- Use `#000` or `#fff` (except the scoped `--color-host-white` carve-out, §4.2), a 500/600 font weight, or
+  colour as the only signal.
 
 ---
 
-## 7. Parallelogram Construction — Draw Order
+## 7. Module-specific exceptions (what each module is allowed to differ on)
 
-The parallelogram construction in Step 3 must follow this specific draw order:
+A module adds its own domain encodings and viewport behaviour **here**, never by re-defining a shared token.
 
-1. P arrow (already drawn from Step 2)
-2. Q arrow (already drawn from Step 2)
-3. Ghost Q from tip of P — animate growing outward
-4. Ghost P from tip of Q — animate growing outward
-5. Diagonal R — animate growing from origin
+### 7.1 Module 2 — Orthographic Projection of Solids (the master / reference implementation)
 
-This order makes the logic of the construction visible. The ghost sides grow before the diagonal appears, reinforcing the procedure.
+- **Adds PP Violet** (`--color-pp-line #7a5ea6`) as a fully-used third projection plane (side view).
+- Defines only the two z-index rungs it uses (`--z-notice`, `--z-overlay`).
+- Step card is addressed by **id** (`#step-card`); the Host-White Exception applies to `#step-card`,
+  `#active-problem`, `.problem-card`, the `.problem-library` backdrop, and the `.vp-hint`/spotlight chips.
+- `@font-face` URLs are `./assets/fonts/…` (HTML at module root). UI DOM ownership: `uiManager.js` owns the
+  parameter dock.
+- Pressable chips/toggles all use `scale(0.97)` (`.wizard-toggle:active`, `.quick-view:active`,
+  `.connector-toggle:active`, `.btn:active`, etc.).
 
----
+### 7.2 Module 1 — Foundations of Projection (seven lessons + Points/Lines sims)
 
-## 8. Triangle Law View
-
-In the triangle law toggle state:
-
-- P is drawn from the origin in its original direction
-- Q is drawn from the tip of P (translated)
-- R is drawn as the closing vector from origin to the translated tip of Q
-- The parallelogram ghost lines are hidden
-- The origin angle arc (θ between P and Q) is hidden
-- The label θ is replaced by a note: "Q placed tip-to-tail on P"
-
-The triangle arrangement must visually read as a closed path: P → Q → R (returning to origin).
-
----
-
-## 9. Insight Callout (Step 6)
-
-The insight callout follows the Hint Callout component from DESIGN.shared.md:
-- Background: `--color-accent-soft`
-- Text: `--color-ink`
-- Rounded: `--radius-sm`
-- Padding: `12px`
-
-### Insight text by angle range
-
-| θ range | Insight text |
-|---------|-------------|
-| θ = 0° | "Forces aligned — R is at its maximum: R = P + Q." |
-| 0° < θ < 60° | "Angle is small — the forces mostly reinforce each other. R is close to P + Q." |
-| θ = 60° | "At 60°, R = P√3 when P = Q. The resultant is √3 times either force." |
-| θ = 90° | "Perpendicular forces — R = √(P² + Q²). This is the Pythagorean theorem." |
-| θ = 120°, P = Q | "Equal forces at 120° — R equals either force. A key textbook result." |
-| 90° < θ < 180° | "Large angle — forces partially oppose each other. R is decreasing." |
-| θ = 180° | "Forces directly opposed — R = |P − Q|. If P = Q, the resultant is zero." |
+- **Adds the full z-index ladder** (§4.3) and the **Lines construction-aid tokens** (§2.2:
+  `--construct`/`--locus`/`--tl-green` + `-ink` variants).
+- **Carries a premium interaction layer** (motion palette, engine-injected viewport chrome, onboarding,
+  feedback/resilience, Problem Library). The design-system parts are in §4–§5; the deep implementation spec
+  (Compare-View state machine, cinematic-fold camera, chrome-injection contract) lives in `Module1/DESIGN.md`.
+- **The Compare View / Compare card** is a **Module-1 feature still in active development and testing** — it
+  re-houses the old dual-renderer 2D drawing as an on-demand floating card. **It is not yet implemented in
+  Module 2.** The Host-White Exception in Module 1 therefore additionally covers the viewport `.compare-card`
+  frame, with the Compare drawing **stage** kept at `--color-paper` so the 2D sheet matches the player. Step
+  card is addressed by **class** (`.step-card`), and the exception applies to `.step-card`, `#active-problem`,
+  `.problem-card`, the `.problem-library` backdrop, the `.compare-card` frame, and `.vp-hint`/spotlight chips.
+  *(This was the entire ~2-line drift between the two former `DESIGN.shared.md` copies — see §8. It is
+  legitimate Module-1-specific content, not accidental drift; it was relocated here.)*
+- `@font-face` is declared in `src/shell.css`, so font URLs are **`../assets/fonts/…`** (stylesheet one level
+  down). UI DOM ownership: the engine + `chrome.js` own the chrome; `src/uiManager.js` is a vestigial stub.
+- **The no-transform invariant** (§4.4) is required by the Compare card's `position:fixed` placement.
 
 ---
 
-## 10. Preset Case Buttons (Step 6)
+## 8. Known gaps and open questions (flagged during the 2026-06-27 audit)
 
-Four ghost buttons in a row, labeled by the case they load:
-
-- `θ = 0°`
-- `θ = 90°`
-- `P = Q, θ = 120°`
-- `θ = 180°`
-
-Style: ghost button (`--color-paper` fill, hairline border, `--color-ink-secondary` text, `--radius-sm`, 44px height).
-
-When a preset is active, its button shows a filled accent-soft background as a second cue (not just the selection color).
-
----
-
-## 11. Step Rail
-
-The step rail shows 6 markers for this simulation (vector-resolution has 5).
-
-Marker labels (short form for the rail):
-
-1. Intro
-2. Two Forces
-3. Parallelogram
-4. Resultant
-5. Triangle Law
-6. Explore
-
-Same visual rules as DESIGN.shared.md Step Rail component.
+1. **`solid-fill` is canonical; `geometry-fill` was never implemented.** The former `DESIGN.shared.md` named
+   the rendered-geometry fill token `geometry-fill` (`#e7e1d4`); the actual CSS variable in **both** modules
+   is `--color-solid-fill`. **Resolved: code wins — the token is `--color-solid-fill`.** *Open question:* if
+   the platform later wants a discipline-neutral name for non-solids modules, that is a real **rename in
+   code** (both modules + topic copies) tracked through an ADR — not a doc-only change. Until then, do not
+   write `--color-geometry-fill` anywhere.
+2. **`--color-pp-line` is defined-but-unused in Module 1.** It is carried over from Module 2 but Module 1's
+   colour convention only uses HP/VP. Harmless (it keeps the token set uniform), but a contributor should not
+   assume Module 1 renders a profile-plane projection. *Open: remove it from Module 1, or wire it up if/when
+   Module 1 gains a side view.*
+3. **The z-index ladder and base motion tokens were only fully present in Module 1.** They are now documented
+   as platform standards (§4.3, §5.10), but **Module 2's code defines only the two z rungs it needs.** Open:
+   decide whether Module 2 should adopt the full ladder for forward parity.
+4. **Module 1's boot diagnostic hard-codes hex** (`#efebe1`, `#221f18`, `#d9d2c3`, `#faf8f3`, `#564e3c`) in an
+   inline `<script>` in `index.html`. This is a **deliberate pre-CSS fallback** — the error overlay must paint
+   before `shell.css`/tokens load, so it cannot use `var(--color-*)`. It is the **only** hard-coded colour
+   anywhere and is exempt from ADR-003 by necessity. Module 2's `index.html` has no such literals.
+5. **The Compare drawing feature is still being developed and tested in Module 1** and has **not** been ported
+   to Module 2 (confirmed by the maintainer, 2026-06-27). The two modules will diverge on Compare-related
+   chrome until that port happens; §7 records the current Module-1-only state.
+6. **Per-module `DESIGN.md` files remain on disk.** `Module1/DESIGN.md` is kept as the legitimate Module-1
+   premium-interaction implementation appendix. `Module2/DESIGN.md` is now fully superseded by this root file
+   and is a candidate for removal (left in place because the consolidation brief only authorized deleting the
+   `DESIGN.shared.md` copies).
 
 ---
 
-## 12. Do's and Don'ts — Simulation Specific
-
-### Do:
-- **Do** keep P red and Q amber throughout all steps — never swap colors mid-simulation.
-- **Do** animate the parallelogram construction sequentially (ghost sides before diagonal).
-- **Do** keep the resultant R visually heavier (thicker) than P and Q at all times.
-- **Do** hide the parallelogram ghost when toggled to triangle law view.
-- **Do** keep the narrative tugboat step free of any equation or formula.
-- **Do** use `prefers-reduced-motion` to skip all animations to instant.
-
-### Don't:
-- **Don't** use blue for any force arrow, construction line, or angle arc inside the viewport.
-- **Don't** draw the angle arc when θ = 0° or θ = 180° — suppress it gracefully.
-- **Don't** attempt to draw a parallelogram when θ = 0° or θ = 180° — collapse gracefully.
-- **Don't** show the equations panel before Step 4.
-- **Don't** show the resultant R before Step 4 (construction visible in Step 3, resultant in Step 4).
-- **Don't** use P and Q in exactly the same color — the student must always distinguish them.
+*Consolidated at the Simatrix root on 2026-06-27 from `Module1/DESIGN.md`, `Module1/DESIGN.shared.md`,
+`Module2/DESIGN.md`, and `Module2/DESIGN.shared.md`, audited against the live code. Module 2 is the master;
+where a module appendix conflicts on a token or named rule, this file wins. Enforcement: `../RULES.md` ·
+Reasoning: `../DECISIONS.md` · Architecture: `../ARCHITECTURE.md`.*

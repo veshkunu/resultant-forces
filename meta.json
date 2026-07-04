@@ -1,0 +1,6 @@
+{
+  "title": "Force Analysis System — Engineering Mechanics",
+  "description": "Interactive analysis of the resultant of two concurrent coplanar forces: component resolution, horizontal and vertical summation, resultant magnitude and direction, and moment about a point.",
+  "difficulty": "beginner",
+  "tags": ["engineering-mechanics", "resultant-forces", "vectors", "statics", "moment-of-force"]
+}

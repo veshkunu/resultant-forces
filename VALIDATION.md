@@ -1,5 +1,11 @@
 # VALIDATION.md — Resultant of Forces
 
+> ⚠ **SUPERSEDED — written for the two-vector P/Q/θ model.** ADR-006 replaced that model with
+> four independent, fixed-quadrant vectors (A/B/C/D); ADR-007 dropped the Parallelogram Law
+> cross-check below as inherently 2-vector-only, replacing it with quadrant-aware direction
+> resolution. Every test case in this file still describes the *old* model and needs a full
+> rewrite for the new one — kept here for historical reference only, not as a current spec.
+
 Mathematical test cases, edge cases, expected answers, and acceptance criteria for the Resultant Forces simulation.
 
 All test cases must pass before the simulation is considered complete.

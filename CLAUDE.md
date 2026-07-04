@@ -1,6 +1,23 @@
-# CLAUDE.md — Simatrix Engineering Mechanics · Module 1 · Simulation 2
+# CLAUDE.md — Simatrix Engineering Mechanics · Resultant of Forces
 
-Three.js simulation that teaches the **Resultant of Forces** using the Parallelogram Law and Triangle Law, following the Simatrix Guided Stepper architecture.
+Three.js simulation that teaches the **Resultant of Four Concurrent Coplanar Forces** (one fixed
+per quadrant) via the component method (ΣFx, ΣFy) and quadrant-aware direction resolution, as an
+interactive force-analysis dashboard.
+
+> **Harmonised 2026-07-03; four-quadrant model added 2026-07-04.** This file was rewritten to
+> describe the architecture that is actually shipped (see `ARCHITECTURE.md` and `DECISIONS.md`
+> ADR-001). The simulation was originally specified as a 6-step Guided Stepper with a tugboat
+> narrative and a parallelogram/triangle-law construction; that implementation was started
+> (`src/sceneSetup.js`, `src/intro/*`, `src/shared/*`) but never wired up, and a different
+> accordion-based dashboard shipped instead. Both are described here so a future contributor
+> doesn't have to rediscover this by reading dead code — see "Legacy code" below. On 2026-07-04
+> the original two-vector (P/Q/θ) model was replaced with four independent, fixed-quadrant
+> vectors (A/B/C/D) and the Parallelogram Law cross-check was dropped in favor of quadrant-aware
+> direction resolution — see `DECISIONS.md` ADR-006/ADR-007. Later that same day the interaction
+> model was redesigned: the always-visible force-config panel, canvas dragging, and canvas-click
+> Component Resolution were all replaced by one sidebar-driven workflow (select a Geometry force
+> card → floating edit panel), and vector angles became local 0–90° inputs instead of global
+> 0–360° ones — see `CHANGELOG.md`'s 2026-07-04 "Interaction redesign" entry.
 
 ---
 
@@ -9,40 +26,43 @@ Three.js simulation that teaches the **Resultant of Forces** using the Parallelo
 **Module:** Engineering Mechanics — Module 1
 **Simulation number:** 2 of 6
 **Topic:** Resultant of Concurrent Coplanar Forces
-**Methods taught:** Parallelogram Law, Triangle Law
+**Methods taught:** component resolution (ΣFx, ΣFy), resultant magnitude/direction, moment of a force
 
 ---
 
 # UI Model
 
-The simulation is a Guided Stepper.
+The simulation is a **free-navigation analysis dashboard**, not a gated Guided Stepper:
 
-The learner progresses through 6 steps.
+* the **workspace** (left ~75%) holds the 3D force diagram — a pure, read-only visualization with
+  no pointer interaction of its own — plus two floating overlays that only ever appear one at a
+  time: the **edit panel** (shown while a Geometry force card is selected) and the **component
+  analysis popup** (shown while a Component Resolution force card is selected);
+* the **dashboard** (right ~25%) holds a live-value strip and a 7-card accordion — Geometry,
+  Component Resolution, Horizontal Summation, Vertical Summation, Net Resultant, Resultant
+  Direction, System Moment — that the learner may open **in any order**, not a fixed 1→6 sequence.
 
-Only the controls required for the current step are visible.
+This is a deliberate, documented deviation from the platform's shared Guided Stepper
+interaction shape (`DESIGN.md` §6, `PRODUCT.md` Design Principle 2) — see `DECISIONS.md`
+ADR-001 for why it was kept rather than rebuilt during harmonisation, and treat it as an open
+question for a future session, not a settled architecture.
 
-The UI follows:
-
-* progressive disclosure
-* low cognitive load
-* intuition-first teaching
-* narrative before equation
+There is exactly one way to change a force: select its card in the Geometry section → the
+floating edit panel targets it → adjust magnitude/local angle there (`RULES.md` §1.6). Everything
+else (component breakdown, ΣFx/ΣFy, resultant, direction, moment arm) reveals when its accordion
+card is opened, so progressive disclosure is partial, not the full step-gating the platform model
+expects.
 
 ---
 
 # Design System Rules
 
-All visual styling follows DESIGN.shared.md.
-Simulation-specific visual rules follow DESIGN.md.
+All visual styling follows `DESIGN.md` (platform-wide tokens) plus the Engineering Mechanics
+appendix in `DESIGN.shared.md` (force/construction color encodings). Never hard-code:
 
-Never hard-code:
-
-* colors
-* spacing
-* typography
+* colors — read via `getComputedStyle` (`cssVar()` in `src/scene.js`) or `var(--color-*)` in CSS
+* spacing, radii, typography — consume the tokens in `style.css` `:root`
 * UI dimensions
-
-All colors must use CSS variables.
 
 ---
 
@@ -50,264 +70,108 @@ All colors must use CSS variables.
 
 This simulation contains:
 
-* index.html → UI shell (step rail, step card, viewport, labels, equations)
-* main.js → renderer loop, state management, step navigation, drag callback
-* style.css → simulation CSS (consumes shared CSS variables)
-* src/steps.js → 6-step guided learning sequence with all step content
-* src/vectorMath.js → resultant force calculations (parallelogram law, triangle law)
-* src/sceneSetup.js → Three.js scene: vectors, parallelogram, triangle, angle arc
-* src/uiManager.js → UI builder: step card, sliders, equations panel, insight callout
-* CLAUDE.md → this file
-* DESIGN.md → simulation-specific design rules
-* DESIGN.shared.md → platform-wide design tokens and rules
-* PRODUCT.md → simulation product brief
-* VALIDATION.md → mathematical test cases and acceptance criteria
+* `index.html` → UI shell (workspace, force-config panel, dashboard accordion, component popup, mobile notice)
+* `main.js` → state, render loop, `window.simAPI`, Reset control, accordion/section logic, GSAP-driven reveals
+* `style.css` → all styling; consumes tokens defined in its own `:root` (DESIGN.md-compliant)
+* `src/forces.js` → `computeForces()` (component method + quadrant-aware direction resolution, ADR-007), `computeMoment()`, `QUADRANT_BANDS`, formatters
+* `src/scene.js` → Three.js scene: grid, axes, per-vector arrows (+ disabled-vector ghosts), quadrant guide, resultant/moment arrows, angle arcs — reads all color from CSS custom properties via `cssVar()`
+* `meta.json` → platform metadata (title, description, difficulty, tags)
+* `assets/fonts/` → bundled Atkinson Hyperlegible + IBM Plex Mono woff2 (no CDN)
+* `CLAUDE.md` → this file
+* `ARCHITECTURE.md`, `DECISIONS.md`, `RULES.md`, `CHANGELOG.md` → this module's own documentation set
+* `VALIDATION.md` → math test cases for the original two-vector model — **superseded**, flagged stale pending a rewrite for the four-vector model (see `DECISIONS.md` ADR-006/ADR-007)
+* `TESTING.md`, `IMPLEMENTATION_PLAN.md` → describe the original, unbuilt Guided Stepper design; kept for historical reference, **not** current behavior (see `DECISIONS.md` ADR-001)
+
+## Legacy code (not imported, not deleted)
+
+`src/sceneSetup.js`, `src/intro/*` (IntroCamera, IntroDialogue, IntroHighlights, IntroManager,
+IntroStepController, HarborScene), and `src/shared/*` (AnimationManager, StateManager) implement
+the original tugboat-narrative Guided Stepper. **Nothing in `index.html` or `main.js` imports
+them.** They are kept in place pending a decision on ADR-001, not deleted unilaterally. Do not
+extend them without first resolving that decision — see `DECISIONS.md`.
 
 ---
 
-# Architecture Rules
+# Project-wide documentation (read before cross-module tasks)
 
-* No npm
-* No webpack
-* No build tools
-* Use Three.js CDN ES modules only
-* All imports must use .js extension
-* All paths must be relative
-* Mirror the file structure of the vector-resolution simulation
+* `DESIGN.md` — color tokens, typography, component standards (platform-wide, identical across
+  every Simatrix module by design — do not fork it locally)
+* `PRODUCT.md` — persona, principles, accessibility commitments (§1–4, §7–9 are platform-wide and
+  apply here; §5–6 describe Engineering Graphics Module 1/2 features and do **not** apply to this
+  module — see `DECISIONS.md` ADR-002)
+* `PLATFORM-RULES.md` — what every module must/must not do regardless of subject
+* `DESIGN.shared.md` — Engineering Mechanics family design system, including this module's own
+  force/construction color appendix
 
----
-
-# Guided Stepper Flow
-
-This simulation has 6 steps:
-
-1. Real-World Narrative — tugboat scenario, no controls
-2. Two Force Vectors — show P and Q at a common origin with angle θ
-3. Parallelogram Construction — animate the ghost sides, reveal diagonal
-4. Resultant Force — show R with live equation
-5. Triangle Law — transition animation, toggle view
-6. Explore and Compare — preset special cases, insight callout
-
-Each step reveals only the required controls.
-
-The step rail shows 6 markers.
+This module does not fork `DESIGN.md`/`PRODUCT.md` locally beyond what already exists at the
+family level (`DESIGN.shared.md`). Its own architecture, decisions, and rules live in
+`ARCHITECTURE.md`, `DECISIONS.md`, and `RULES.md` per `CLAUDE.module-template.md`.
 
 ---
 
 # State Model
 
-The simulation state is a plain object:
+Four fixed-role, quadrant-clamped vectors (ADR-006) — A:QI, B:QII, C:QIII, D:QIV. Each vector's
+angle is stored as a **local** 0–90° reference angle (what the floating edit panel edits), not a
+global one — see `RULES.md` §1.4 and `src/forces.js#quadrantAngle`:
 
-```
+```js
 {
-  magnitudeP: number,   // magnitude of force P in Newtons
-  magnitudeQ: number,   // magnitude of force Q in Newtons
-  thetaDeg:   number,   // angle between P and Q in degrees (0–180)
-  pAngleDeg:  number,   // absolute angle of P from X-axis in degrees
-  view:       string,   // 'parallelogram' | 'triangle'
+  vectors: [
+    { id: 'A', enabled: boolean, magnitude: number, localAngleDeg: number }, // 0-90, off +X axis
+    { id: 'B', enabled: boolean, magnitude: number, localAngleDeg: number }, // 0-90, off -X axis
+    { id: 'C', enabled: boolean, magnitude: number, localAngleDeg: number }, // 0-90, off -X axis
+    { id: 'D', enabled: boolean, magnitude: number, localAngleDeg: number }, // 0-90, off +X axis
+  ],
+  momentArm: number, // perpendicular distance d for the Moment card, in metres
 }
 ```
 
-Derived values (computed, never stored):
-
-```
-qAngleDeg  = pAngleDeg + thetaDeg
-R          = √(P² + Q² + 2PQ cos θ)
-alphaRad   = atan2(Q sin θ, P + Q cos θ)
-rAngleDeg  = pAngleDeg + alpha (in degrees)
-Rx         = R cos(rAngleDeg)
-Ry         = R sin(rAngleDeg)
-```
+Derived (computed in `src/forces.js#computeForces`, never stored): per-vector `angleDeg` (global,
+via `quadrantAngle`), `Fx, Fy`; `Rx, Ry,
+R` (component sum, generalizes to however many vectors are enabled); `referenceAngleDeg` (0–90°,
+off the nearer axis), `actualDirectionDeg` (0–360°), and `resultantQuadrant` (1–4, or `null` on an
+axis / at the origin) — quadrant-aware direction resolution, ADR-007. The Parallelogram Law
+cross-check (`R_para`/`alphaDeg`) that this state model previously required has been **removed**
+(ADR-007) — it is algebraically valid for exactly two vectors and has no N-vector form.
 
 ---
 
-# Mathematical Rules
+# Platform Contract
 
-## Parallelogram Law
-
-Given forces P and Q with angle θ between them:
-
-```
-R = √(P² + Q² + 2PQ cos θ)
-```
-
-Direction of R measured from P:
-
-```
-α = arctan(Q sin θ / (P + Q cos θ))
-```
-
-## Triangle Law
-
-Place Q at the tip of P (tip-to-tail). R is the closing vector:
-
-```
-Rx = Px + Qx   (component form)
-Ry = Py + Qy
-R  = √(Rx² + Ry²)
-```
-
-Triangle law and parallelogram law must always give the same R magnitude and direction.
-
-## Component form (for verification)
-
-```
-Px = P cos(pAngleDeg)
-Py = P sin(pAngleDeg)
-Qx = Q cos(qAngleDeg)
-Qy = Q sin(qAngleDeg)
-Rx = Px + Qx
-Ry = Py + Qy
-R  = √(Rx² + Ry²)
-rAngle = atan2(Ry, Rx)
-```
-
-All displayed values must:
-
-* update live on any slider or drag interaction
-* show units (N for force, ° for angle)
-* remain visible during interaction
+* `window.simAPI = { pause(), resume(), reset() }` — the only reset path; the dashboard's Reset
+  button routes through `simAPI.reset()` exclusively, guarded by a two-state confirm.
+* `meta.json` ships all four required fields; `difficulty` is lowercase.
+* Three.js and GSAP are both loaded as pinned-version ES modules via the import map — no UMD
+  globals, no unpinned CDN.
+* Fonts are bundled locally (`assets/fonts/*.woff2`) — no Google Fonts or other font CDN.
+* `#mobile-notice` shows a dismissible "Best experienced on desktop." banner below 768px.
+* All GSAP timelines are gated by a `REDUCED_MOTION` flag (`window.matchMedia('(prefers-reduced-motion: reduce)')`)
+  read once at load in `main.js`; CSS transitions/animations collapse via the
+  `@media (prefers-reduced-motion: reduce)` block in `style.css`.
 
 ---
 
-# Scene Conventions
+# Session Digest Protocol
 
-The 3D scene uses an orthographic camera (2D drawing):
+At the end of every session (or when asked), produce a digest in this format:
 
-* X-axis → horizontal direction
-* Y-axis → vertical direction
-* Z-axis → depth (camera looks down Z)
+### SESSION DIGEST — [date] — [feature/task]
+**What changed:** (3–5 bullets, concrete)
+**Decisions made:** (with brief rationale)
+**Patterns introduced:** (reusable code patterns or conventions)
+**Open questions / next steps:**
+**Files modified:** (list)
 
-P is fixed along the positive X-axis by default (pAngleDeg = 0).
+# Keeping your own documents current
 
-The angle θ control rotates Q relative to P (not relative to the X-axis).
+After completing any task, check whether the work involved:
+- A non-obvious decision between two real options → add an ADR to `DECISIONS.md`
+- A reversed or superseded previous decision → update the relevant ADR status in `DECISIONS.md`
+- A new rule that must be enforced going forward → add it to `RULES.md` citing its source ADR
+- A structural change to the codebase → update `ARCHITECTURE.md`
 
-Vectors are represented using:
-
-* thick mesh arrows (shaft + cone) for P, Q, R
-* dashed line arrows for parallelogram ghost sides
-* angle arc between P and Q
-* text labels at vector tips
-
----
-
-# Color Conventions
-
-All colors read from CSS variables — never hard-coded hex in JS or Three.js.
-
-Defined in DESIGN.md (extends DESIGN.shared.md):
-
-| Element | CSS variable | Character |
-|---|---|---|
-| Force P | `--color-force-p` | Solid red arrow |
-| Force Q | `--color-force-q` | Solid amber-orange arrow |
-| Resultant R | `--color-force-resultant` | Solid blue-grey, thicker |
-| Parallelogram ghost | `--color-construction` | Dashed bench-grey |
-| Angle arc | `--color-bench-grey` | Faint grey arc |
-
-Blue accent (`--color-accent`) is reserved for UI controls only.
-Blue must never appear inside the viewport as a force color.
-
----
-
-# Scene Objects
-
-The sceneSetup.js module must manage these named drawable objects:
-
-| Key | Description |
-|---|---|
-| `grid` | Background grid |
-| `axes` | X and Y axes with arrowheads |
-| `forceP` | Thick arrow for force P |
-| `forceQ` | Thick arrow for force Q |
-| `angleArc` | Arc between P and Q directions |
-| `parallelogram` | Four dashed ghost lines forming the parallelogram |
-| `resultantR` | Thick arrow for resultant R (parallelogram diagonal) |
-| `triangleQ` | Q arrow translated to tip of P (triangle law view) |
-| `triangleR` | Closing arrow from origin to translated Q tip |
-| `labelP` | HTML overlay label at tip of P |
-| `labelQ` | HTML overlay label at tip of Q |
-| `labelR` | HTML overlay label at tip of R |
-| `labelTheta` | HTML overlay label for angle θ |
-| `labelAlpha` | HTML overlay label for direction of R |
-
-The visSet for each step controls which objects are drawn.
-
----
-
-# Animation Rules
-
-## Parallelogram construction animation (Step 3)
-
-Animate in sequence:
-
-1. Ghost copy of Q grows from tip of P (400 ms)
-2. Ghost copy of P grows from tip of Q (400 ms)
-3. Diagonal R grows from origin (500 ms)
-
-Total: ~1300 ms. Collapsed to instant under `prefers-reduced-motion`.
-
-## Triangle law transition animation (Step 5)
-
-Animate Q translating from origin to tip of P (600 ms ease-out).
-
-Then draw R as the closing vector (400 ms).
-
-Collapsed to instant under `prefers-reduced-motion`.
-
-## All animations must:
-
-* teach the concept
-* never feel decorative
-* never block interaction (user can skip by interacting)
-
----
-
-# Reuse from Vector Resolution
-
-The following patterns from `vector-resolution/src/` are direct reuse targets:
-
-* `sceneSetup.js` → cssVar(), FORCE_SCALE, initScene(), makeThickArrow(), makeComponentArrow(), makeAngleArc(), screenToWorld(), worldToScreen(), resize(), clearDyn(), tick() rAF pattern
-* `uiManager.js` → UIManager class, buildRail(), buildStepCard(), _makeSlider(), concept-check builder, _makeEquations() structure
-* `vectorMath.js` → resolve() function (for computing Px, Py, Qx, Qy components)
-* `main.js` → rAF loop structure, step navigation (next/back), drag callback wiring
-
-New code specific to this simulation:
-
-* resultant() calculation in vectorMath.js
-* parallelogram ghost construction in sceneSetup.js
-* triangle law view mode in sceneSetup.js
-* angle arc between P and Q (distinct from origin arc in Vector Resolution)
-* preset-case buttons in uiManager.js
-* insight callout for special angle cases
-
----
-
-# Accessibility Rules
-
-Color is never the only cue.
-
-Every engineering meaning must also use:
-
-* labels (P, Q, R, θ, α)
-* dashed vs solid line style
-* arrow direction
-* line thickness (R is thicker)
-
-Keyboard interaction is mandatory for all sliders and toggles.
-
-All animations must respect `prefers-reduced-motion`.
-
----
-
-# Common Simulation Goals
-
-The learner should:
-
-* understand that two forces combine into one resultant
-* see the parallelogram construct and close into a diagonal
-* see the triangle law as the same result from a different construction
-* discover that angle controls the resultant more than magnitude alone
-* solve textbook problems with confidence
-
-The simulation is a teaching instrument, not a sandbox toy.
+Do not update these files for routine changes. Only update when the change has architectural or
+decision-level significance. If a task surfaces something that should change for *every*
+Simatrix module — a platform contract gap, a design-system correction — flag it rather than
+editing `PLATFORM-RULES.md`/`DESIGN.md`/`PRODUCT.md` unilaterally.

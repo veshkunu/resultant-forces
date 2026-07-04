@@ -3,134 +3,514 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Resultant of Forces — Simatrix Engineering Mechanics</title>
+  <title>Force Analysis System — Engineering Mechanics</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+  <script type="importmap">{"imports":{
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "gsap": "https://cdn.jsdelivr.net/npm/gsap@3.12.5/index.js"
+  }}</script>
   <link rel="stylesheet" href="style.css">
-
-  <!-- Three.js CDN via import map — requires a modern browser with ES module support -->
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
-    }
-  }
-  </script>
 </head>
 <body>
-  <div class="app-shell">
+<div id="app">
 
-    <!-- ── Main area ─────────────────────────────────────────────────────── -->
-    <div class="main-area">
+  <!-- ══ WORKSPACE (left 75%) ══════════════════════════════════════════════ -->
+  <div id="workspace">
+    <canvas id="sim-canvas"></canvas>
 
-      <!-- Viewport -->
-      <div class="viewport-wrap" role="img" aria-label="Force diagram">
-        <canvas id="sim-canvas" aria-hidden="true"></canvas>
+    <!-- HTML label overlay -->
+    <div id="labels-layer" aria-hidden="true">
+      <span id="lbl-origin" class="ws-label ws-label--origin">O</span>
+      <span id="lbl-x"      class="ws-label ws-label--axis">x</span>
+      <span id="lbl-y"      class="ws-label ws-label--axis">y</span>
+      <span id="lbl-vec-A"  class="ws-label ws-label--a"></span>
+      <span id="lbl-vec-B"  class="ws-label ws-label--b"></span>
+      <span id="lbl-vec-C"  class="ws-label ws-label--c"></span>
+      <span id="lbl-vec-D"  class="ws-label ws-label--d"></span>
+      <span id="lbl-r"      class="ws-label ws-label--r" style="display:none"></span>
+      <span id="lbl-px"     class="ws-label ws-label--comp-x" style="display:none"></span>
+      <span id="lbl-py"     class="ws-label ws-label--comp-y" style="display:none"></span>
+      <span id="lbl-quad-1" class="ws-label ws-label--quad">I</span>
+      <span id="lbl-quad-2" class="ws-label ws-label--quad">II</span>
+      <span id="lbl-quad-3" class="ws-label ws-label--quad">III</span>
+      <span id="lbl-quad-4" class="ws-label ws-label--quad">IV</span>
+    </div>
 
-        <!-- HTML labels — positioned each frame by JS via worldToScreen() -->
-        <div class="scene-labels" aria-hidden="true">
-          <span id="label-x"      class="scene-label scene-label--axis"    style="display:none">X</span>
-          <span id="label-y"      class="scene-label scene-label--axis"    style="display:none">Y</span>
-          <span id="label-origin" class="scene-label scene-label--origin"  style="display:none">O</span>
-          <span id="label-p"      class="scene-label scene-label--p"       style="display:none"></span>
-          <span id="label-q"      class="scene-label scene-label--q"       style="display:none"></span>
-          <span id="label-r"      class="scene-label scene-label--r"       style="display:none"></span>
-          <span id="label-theta"  class="scene-label scene-label--theta"   style="display:none">θ</span>
-          <span id="label-alpha"  class="scene-label scene-label--alpha"   style="display:none"></span>
-        </div>
-
-        <!-- Loading / error overlay — hidden after successful Three.js init -->
-        <div class="empty-state" id="empty-state" aria-hidden="true">
-          <p>Loading simulation…</p>
-        </div>
+    <!-- Workspace top bar -->
+    <header id="ws-header">
+      <div class="ws-breadcrumb">
+        <span class="ws-breadcrumb-dot"></span>
+        <span>Engineering Mechanics · Module 1</span>
       </div>
-
-      <!-- ── Step panel ─────────────────────────────────────────────────── -->
-      <aside class="step-panel" aria-label="Lesson panel">
-
-        <!-- Static learning objective -->
-        <div class="learning-objective" aria-label="Learning objective">
-          <span class="label lo-label">Learning Objective</span>
-          <p class="lo-text">Understand how two concurrent forces combine into a single resultant using the Parallelogram Law and Triangle Law.</p>
-        </div>
-
-        <div class="step-eyebrow">
-          <span class="label" id="step-counter" aria-live="polite" tabindex="-1">Step 1 of 6</span>
-        </div>
-
-        <div class="step-card" id="step-card">
-          <h1 class="step-title" id="step-title"></h1>
-          <p  class="step-lead"  id="step-lead"></p>
-
-          <div class="hint-callout"    id="step-hint"     style="display:none"></div>
-
-          <!-- Equations panel appears from Step 4 — injected by UIManager -->
-          <div class="equations-area"  id="equations-area"></div>
-
-          <!-- Slider controls injected by UIManager per step -->
-          <div class="controls-area"   id="controls-area"></div>
-
-          <div class="guidance-callout" id="step-guidance" style="display:none"></div>
-
-          <!-- Concept insight — Step 6: updates live with angle -->
-          <div class="insight-callout" id="concept-insight" style="display:none" aria-live="polite">
-            <span class="insight-title label">Concept Insight</span>
-            <p data-insight-text></p>
-          </div>
-
-          <!-- Collapsible disclosures -->
-          <details class="step-disclosure" id="concept-panel"     style="display:none"></details>
-          <details class="step-disclosure" id="realworld-callout" style="display:none"></details>
-
-          <!-- Concept-check quick question (Steps with conceptCheck defined) -->
-          <div class="concept-check" id="concept-check" style="display:none"></div>
-
-          <div class="step-actions">
-            <button class="btn-secondary" id="btn-back" aria-label="Go to previous step">Back</button>
-            <button class="btn-primary"   id="btn-next" aria-label="Go to next step">Next →</button>
-          </div>
-        </div>
-
-      </aside>
-
-      <!-- ── Step rail — slim right column, populated by UIManager ─────── -->
-      <nav class="step-rail" aria-label="Lesson steps" role="list"></nav>
-
-    </div><!-- /.main-area -->
-
-    <!-- ── DEV validation panel — visible only when DEV_MODE = true ─────── -->
-    <div class="dev-panel" id="dev-panel" aria-hidden="true" style="display:none">
-      <div class="dev-panel__header">
-        <span class="dev-panel__title">DEV — Math Validation</span>
-        <button class="dev-panel__close" id="dev-panel-close" aria-label="Close dev panel">✕</button>
+      <div class="ws-title-bar">
+        <span class="ws-sim-title">RESULTANT OF FORCES</span>
       </div>
-      <div class="dev-panel__body" id="dev-panel-body">
-        <!-- Populated by main.js in Phase 5+ when DEV_MODE is true -->
-        <p class="dev-panel__placeholder">Math validation active from Phase 5.</p>
+      <div id="ws-hint" class="ws-hint">Select a force in the Geometry panel to begin →</div>
+    </header>
+
+    <!-- Floating edit panel (Change 3) — the sim's only floating control, shown only while a
+         Geometry force card is selected; one set of inputs, retargeted per selection. -->
+    <div id="force-edit-panel" class="edit-panel" aria-hidden="true">
+      <div class="edit-panel-head">
+        <span class="fc-dot" id="edit-dot"></span>
+        <span class="edit-title" id="edit-title">FORCE A</span>
+        <span class="fc-quad-badge" id="edit-quad-badge">QI</span>
+        <button class="edit-close" id="edit-close" type="button" aria-label="Close edit panel">✕</button>
+      </div>
+      <div class="fc-row">
+        <span class="edit-label">Magnitude</span>
+        <input type="range" id="sl-edit-mag" class="fc-slider" min="20" max="350" value="100">
+        <input type="number" id="nu-edit-mag" class="fc-num" min="20" max="350" value="100">
+        <span class="fc-unit">N</span>
+      </div>
+      <div class="fc-row">
+        <span class="edit-label">Local Angle</span>
+        <input type="range" id="sl-edit-ang" class="fc-slider" min="0" max="90" value="30">
+        <input type="number" id="nu-edit-ang" class="fc-num" min="0" max="90" value="30">
+        <span class="fc-unit">°</span>
+      </div>
+      <div class="edit-angles">
+        <span>Local Angle <b id="edit-local-ang">30°</b></span>
+        <span>Actual Direction <b id="edit-global-ang">30°</b></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ DASHBOARD (right 25%) ═════════════════════════════════════════════ -->
+  <aside id="dashboard">
+
+    <!-- Header -->
+    <div class="dash-header">
+      <div class="dash-logo">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true" class="dash-logo-svg">
+          <circle class="dls-ring" cx="16" cy="16" r="13" stroke-width="1.5"/>
+          <line class="dls-spoke" x1="16" y1="3"  x2="16" y2="29" stroke-width="0.75" opacity="0.35"/>
+          <line class="dls-spoke" x1="3"  y1="16" x2="29" y2="16" stroke-width="0.75" opacity="0.35"/>
+          <line class="dls-spoke" x1="7"  y1="7"  x2="25" y2="25" stroke-width="0.75" opacity="0.35"/>
+          <line class="dls-spoke" x1="25" y1="7"  x2="7"  y2="25" stroke-width="0.75" opacity="0.35"/>
+          <circle class="dls-dot" cx="16" cy="16" r="3.5"/>
+        </svg>
+      </div>
+      <div>
+        <div class="dash-title">FORCE ANALYSIS SYSTEM</div>
+        <div class="dash-subtitle">Engineering Mechanics · Resultant of Forces</div>
+      </div>
+      <div class="dash-header-actions">
+        <button class="reset-btn" id="btn-reset" type="button">Reset</button>
+        <span class="reset-confirm" id="reset-confirm" role="alertdialog" aria-label="Confirm reset">
+          Reset everything?
+          <button class="rc-yes" id="rc-yes" type="button">Yes</button>
+          <button class="rc-cancel" id="rc-cancel" type="button">Cancel</button>
+        </span>
       </div>
     </div>
 
-  </div><!-- /.app-shell -->
+    <!-- Live strip — one glanceable slot per vector -->
+    <div class="live-strip">
+      <div class="live-item" id="live-item-A">
+        <span class="live-sym live-sym--a">A</span>
+        <span class="live-val" id="live-A">100 N</span>
+      </div>
+      <div class="live-item" id="live-item-B">
+        <span class="live-sym live-sym--b">B</span>
+        <span class="live-val" id="live-B">80 N</span>
+      </div>
+      <div class="live-item" id="live-item-C">
+        <span class="live-sym live-sym--c">C</span>
+        <span class="live-val" id="live-C">OFF</span>
+      </div>
+      <div class="live-item" id="live-item-D">
+        <span class="live-sym live-sym--d">D</span>
+        <span class="live-val" id="live-D">OFF</span>
+      </div>
+    </div>
 
-  <!-- Three.js load-failure detection: if the canvas is still blank after 6 s,
-       the CDN was blocked or the browser does not support import maps. -->
-  <script>
-    setTimeout(function () {
-      var el = document.getElementById('empty-state');
-      if (el && el.style.display !== 'none') {
-        el.removeAttribute('aria-hidden');
-        el.setAttribute('role', 'alert');
-        var p = el.querySelector('p');
-        if (p) {
-          p.textContent = 'The simulation did not load. Check your internet connection, or open this page in Chrome or Firefox.';
-          p.className = 'empty-error';
-        }
-      }
-    }, 6000);
-  </script>
+    <!-- Analysis accordion -->
+    <div id="accordion" role="list">
 
-  <script type="module" src="main.js"></script>
+      <div class="a-card" data-sec="geometry" role="listitem">
+        <button class="a-head" aria-expanded="false">
+          <span class="a-num">01</span>
+          <span class="a-title">Geometry</span>
+          <span class="a-check" aria-hidden="true"></span>
+          <span class="a-chevron" aria-hidden="true">›</span>
+        </button>
+        <div class="a-body">
+          <div class="a-content">
+            <p class="a-instruction">Select a force to inspect or adjust it.</p>
+            <div class="force-card-grid">
+              <div class="force-card" data-context="geometry" data-vec="A" role="button" tabindex="0" aria-pressed="false">
+                <div class="force-card-head">
+                  <span class="fc-dot fc-dot--a"></span>
+                  <span class="force-card-name">Force A</span>
+                  <label class="fc-toggle-wrap" aria-label="Enable Force A">
+                    <input type="checkbox" class="fc-toggle" checked>
+                  </label>
+                </div>
+                <div class="force-card-body">
+                  <div class="force-card-stat"><span class="force-card-val" id="geo-A-mag">100 N</span><span class="force-card-lbl">Magnitude</span></div>
+                  <div class="force-card-stat"><span class="force-card-val" id="geo-A-dir">30°</span><span class="force-card-lbl">Local Angle</span></div>
+                  <div class="force-card-stat"><span class="force-card-val">QI</span><span class="force-card-lbl">Quadrant</span></div>
+                </div>
+              </div>
+              <div class="force-card" data-context="geometry" data-vec="B" role="button" tabindex="0" aria-pressed="false">
+                <div class="force-card-head">
+                  <span class="fc-dot fc-dot--b"></span>
+                  <span class="force-card-name">Force B</span>
+                  <label class="fc-toggle-wrap" aria-label="Enable Force B">
+                    <input type="checkbox" class="fc-toggle" checked>
+                  </label>
+                </div>
+                <div class="force-card-body">
+                  <div class="force-card-stat"><span class="force-card-val" id="geo-B-mag">80 N</span><span class="force-card-lbl">Magnitude</span></div>
+                  <div class="force-card-stat"><span class="force-card-val" id="geo-B-dir">45°</span><span class="force-card-lbl">Local Angle</span></div>
+                  <div class="force-card-stat"><span class="force-card-val">QII</span><span class="force-card-lbl">Quadrant</span></div>
+                </div>
+              </div>
+              <div class="force-card" data-context="geometry" data-vec="C" role="button" tabindex="0" aria-pressed="false">
+                <div class="force-card-head">
+                  <span class="fc-dot fc-dot--c"></span>
+                  <span class="force-card-name">Force C</span>
+                  <label class="fc-toggle-wrap" aria-label="Enable Force C">
+                    <input type="checkbox" class="fc-toggle">
+                  </label>
+                </div>
+                <div class="force-card-body">
+                  <div class="force-card-stat"><span class="force-card-val" id="geo-C-mag">60 N</span><span class="force-card-lbl">Magnitude</span></div>
+                  <div class="force-card-stat"><span class="force-card-val" id="geo-C-dir">45°</span><span class="force-card-lbl">Local Angle</span></div>
+                  <div class="force-card-stat"><span class="force-card-val">QIII</span><span class="force-card-lbl">Quadrant</span></div>
+                </div>
+              </div>
+              <div class="force-card" data-context="geometry" data-vec="D" role="button" tabindex="0" aria-pressed="false">
+                <div class="force-card-head">
+                  <span class="fc-dot fc-dot--d"></span>
+                  <span class="force-card-name">Force D</span>
+                  <label class="fc-toggle-wrap" aria-label="Enable Force D">
+                    <input type="checkbox" class="fc-toggle">
+                  </label>
+                </div>
+                <div class="force-card-body">
+                  <div class="force-card-stat"><span class="force-card-val" id="geo-D-mag">50 N</span><span class="force-card-lbl">Magnitude</span></div>
+                  <div class="force-card-stat"><span class="force-card-val" id="geo-D-dir">45°</span><span class="force-card-lbl">Local Angle</span></div>
+                  <div class="force-card-stat"><span class="force-card-val">QIV</span><span class="force-card-lbl">Quadrant</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="a-card" data-sec="components" role="listitem">
+        <button class="a-head" aria-expanded="false">
+          <span class="a-num">02</span>
+          <span class="a-title">Component Resolution</span>
+          <span class="a-check" aria-hidden="true"></span>
+          <span class="a-chevron" aria-hidden="true">›</span>
+        </button>
+        <div class="a-body">
+          <div class="a-content">
+            <p class="a-instruction" id="comp-instruction">Select a force below to view its component breakdown.</p>
+            <div class="force-card-grid">
+              <div class="force-card" data-context="components" data-vec="A" role="button" tabindex="0" aria-pressed="false">
+                <div class="force-card-head">
+                  <span class="fc-dot fc-dot--a"></span>
+                  <span class="force-card-name">Force A</span>
+                  <span class="force-card-state" id="comp-A-state">ON</span>
+                </div>
+                <div class="force-card-body">
+                  <div class="force-card-stat"><span class="force-card-val" id="comp-A-mag">100 N</span><span class="force-card-lbl">Magnitude</span></div>
+                  <div class="force-card-stat"><span class="force-card-val" id="comp-A-dir">30°</span><span class="force-card-lbl">Local Angle</span></div>
+                  <div class="force-card-stat"><span class="force-card-val">QI</span><span class="force-card-lbl">Quadrant</span></div>
+                </div>
+              </div>
+              <div class="force-card" data-context="components" data-vec="B" role="button" tabindex="0" aria-pressed="false">
+                <div class="force-card-head">
+                  <span class="fc-dot fc-dot--b"></span>
+                  <span class="force-card-name">Force B</span>
+                  <span class="force-card-state" id="comp-B-state">ON</span>
+                </div>
+                <div class="force-card-body">
+                  <div class="force-card-stat"><span class="force-card-val" id="comp-B-mag">80 N</span><span class="force-card-lbl">Magnitude</span></div>
+                  <div class="force-card-stat"><span class="force-card-val" id="comp-B-dir">45°</span><span class="force-card-lbl">Local Angle</span></div>
+                  <div class="force-card-stat"><span class="force-card-val">QII</span><span class="force-card-lbl">Quadrant</span></div>
+                </div>
+              </div>
+              <div class="force-card" data-context="components" data-vec="C" role="button" tabindex="0" aria-pressed="false">
+                <div class="force-card-head">
+                  <span class="fc-dot fc-dot--c"></span>
+                  <span class="force-card-name">Force C</span>
+                  <span class="force-card-state" id="comp-C-state">OFF</span>
+                </div>
+                <div class="force-card-body">
+                  <div class="force-card-stat"><span class="force-card-val" id="comp-C-mag">60 N</span><span class="force-card-lbl">Magnitude</span></div>
+                  <div class="force-card-stat"><span class="force-card-val" id="comp-C-dir">45°</span><span class="force-card-lbl">Local Angle</span></div>
+                  <div class="force-card-stat"><span class="force-card-val">QIII</span><span class="force-card-lbl">Quadrant</span></div>
+                </div>
+              </div>
+              <div class="force-card" data-context="components" data-vec="D" role="button" tabindex="0" aria-pressed="false">
+                <div class="force-card-head">
+                  <span class="fc-dot fc-dot--d"></span>
+                  <span class="force-card-name">Force D</span>
+                  <span class="force-card-state" id="comp-D-state">OFF</span>
+                </div>
+                <div class="force-card-body">
+                  <div class="force-card-stat"><span class="force-card-val" id="comp-D-mag">50 N</span><span class="force-card-lbl">Magnitude</span></div>
+                  <div class="force-card-stat"><span class="force-card-val" id="comp-D-dir">45°</span><span class="force-card-lbl">Local Angle</span></div>
+                  <div class="force-card-stat"><span class="force-card-val">QIV</span><span class="force-card-lbl">Quadrant</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="a-card" data-sec="horizontal" role="listitem">
+        <button class="a-head" aria-expanded="false">
+          <span class="a-num">03</span>
+          <span class="a-title">Horizontal Summation</span>
+          <span class="a-check" aria-hidden="true"></span>
+          <span class="a-chevron" aria-hidden="true">›</span>
+        </button>
+        <div class="a-body">
+          <div class="a-content">
+            <div class="eq-block">
+              <div class="eq-row eq-row--formula">
+                <span class="eq-sym">ΣF<sub>x</sub></span>
+                <span class="eq-eq">=</span>
+                <span id="h-terms-formula"></span>
+              </div>
+              <div class="eq-row">
+                <span class="eq-sym">ΣF<sub>x</sub></span>
+                <span class="eq-eq">=</span>
+                <span id="h-terms-values"></span>
+              </div>
+              <div class="eq-row eq-row--result">
+                <span class="eq-sym">ΣF<sub>x</sub></span>
+                <span class="eq-eq">=</span>
+                <span class="eq-val eq-val--accent" id="h-total">—</span>
+                <span class="eq-unit">N</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="a-card" data-sec="vertical" role="listitem">
+        <button class="a-head" aria-expanded="false">
+          <span class="a-num">04</span>
+          <span class="a-title">Vertical Summation</span>
+          <span class="a-check" aria-hidden="true"></span>
+          <span class="a-chevron" aria-hidden="true">›</span>
+        </button>
+        <div class="a-body">
+          <div class="a-content">
+            <div class="eq-block">
+              <div class="eq-row eq-row--formula">
+                <span class="eq-sym">ΣF<sub>y</sub></span>
+                <span class="eq-eq">=</span>
+                <span id="v-terms-formula"></span>
+              </div>
+              <div class="eq-row">
+                <span class="eq-sym">ΣF<sub>y</sub></span>
+                <span class="eq-eq">=</span>
+                <span id="v-terms-values"></span>
+              </div>
+              <div class="eq-row eq-row--result">
+                <span class="eq-sym">ΣF<sub>y</sub></span>
+                <span class="eq-eq">=</span>
+                <span class="eq-val eq-val--accent" id="v-total">—</span>
+                <span class="eq-unit">N</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="a-card" data-sec="resultant" role="listitem">
+        <button class="a-head" aria-expanded="false">
+          <span class="a-num">05</span>
+          <span class="a-title">Net Resultant</span>
+          <span class="a-check" aria-hidden="true"></span>
+          <span class="a-chevron" aria-hidden="true">›</span>
+        </button>
+        <div class="a-body">
+          <div class="a-content">
+            <div class="eq-block">
+              <div class="eq-row eq-row--formula">
+                <span class="eq-sym c-r">R</span>
+                <span class="eq-eq">=</span>
+                <span class="eq-formula-text">√(ΣF<sub>x</sub>² + ΣF<sub>y</sub>²)</span>
+              </div>
+              <div class="eq-row" id="r-sub-row" style="opacity:0.4">
+                <span class="eq-sym c-r">R</span>
+                <span class="eq-eq">=</span>
+                <span class="eq-val" id="r-sub">√(— ² + — ²)</span>
+              </div>
+              <div class="eq-row eq-row--result">
+                <span class="eq-sym c-r">R</span>
+                <span class="eq-eq">=</span>
+                <span class="eq-val eq-val--accent eq-val--large" id="r-value">—</span>
+                <span class="eq-unit">N</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="a-card" data-sec="direction" role="listitem">
+        <button class="a-head" aria-expanded="false">
+          <span class="a-num">06</span>
+          <span class="a-title">Resultant Direction</span>
+          <span class="a-check" aria-hidden="true"></span>
+          <span class="a-chevron" aria-hidden="true">›</span>
+        </button>
+        <div class="a-body">
+          <div class="a-content">
+            <div class="eq-block">
+              <div class="eq-row eq-row--formula">
+                <span class="eq-formula-text">Reference angle θ = tan⁻¹(|ΣF<sub>y</sub>| / |ΣF<sub>x</sub>|), mapped to 0–360° by quadrant</span>
+              </div>
+              <div class="eq-row">
+                <span class="eq-sym c-alpha">Reference Angle</span>
+                <span class="eq-eq">=</span>
+                <span class="eq-val" id="d-ref">—</span>
+                <span class="eq-unit">°</span>
+              </div>
+              <div class="eq-row eq-row--result">
+                <span class="eq-sym c-alpha">Actual Direction</span>
+                <span class="eq-eq">=</span>
+                <span class="eq-val eq-val--accent eq-val--large" id="d-actual">—</span>
+                <span class="eq-unit">°</span>
+              </div>
+              <div class="eq-row">
+                <span class="eq-sym">Quadrant</span>
+                <span class="eq-eq">=</span>
+                <span class="eq-val" id="d-quadrant">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="a-card" data-sec="moment" role="listitem">
+        <button class="a-head" aria-expanded="false">
+          <span class="a-num">07</span>
+          <span class="a-title">System Moment</span>
+          <span class="a-check" aria-hidden="true"></span>
+          <span class="a-chevron" aria-hidden="true">›</span>
+        </button>
+        <div class="a-body">
+          <div class="a-content">
+            <div class="fc-row" style="margin-bottom:12px">
+              <span class="fc-sym" style="color:var(--color-ink-secondary)">d</span>
+              <input type="range" id="sl-arm" class="fc-slider" min="0.5" max="5" step="0.1" value="2">
+              <input type="number" id="nu-arm" class="fc-num" value="2.0" step="0.1" min="0.5" max="5">
+              <span class="fc-unit">m</span>
+            </div>
+            <div class="eq-block">
+              <div class="eq-row eq-row--formula">
+                <span class="eq-sym c-moment">M<sub>o</sub></span>
+                <span class="eq-eq">=</span>
+                <span class="eq-sym c-r">R</span>
+                <span class="eq-op">×</span>
+                <span class="eq-sym">d</span>
+              </div>
+              <div class="eq-row" id="m-sub-row" style="opacity:0.4">
+                <span class="eq-sym c-moment">M<sub>o</sub></span>
+                <span class="eq-eq">=</span>
+                <span class="eq-val" id="m-sub">— × —</span>
+              </div>
+              <div class="eq-row eq-row--result">
+                <span class="eq-sym c-moment">M<sub>o</sub></span>
+                <span class="eq-eq">=</span>
+                <span class="eq-val eq-val--accent eq-val--large" id="m-value">—</span>
+                <span class="eq-unit">N·m</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /#accordion -->
+
+    <div class="dash-footer">Simatrix · EM Module 1 · Simulation 2</div>
+  </aside>
+
+</div><!-- /#app -->
+
+<!-- ══ COMPONENT ANALYSIS POPUP ══════════════════════════════════════════════ -->
+<div id="popup" class="popup" aria-hidden="true" role="dialog" aria-label="Component Analysis">
+  <div class="popup-header">
+    <span class="popup-title" id="popup-title">COMPONENT ANALYSIS</span>
+    <button class="popup-close" id="popup-close" aria-label="Close">✕</button>
+  </div>
+  <div class="popup-body">
+    <svg id="popup-svg" class="popup-svg" viewBox="-2.2 -2.2 4.4 4.4" aria-hidden="true">
+      <!-- Axes -->
+      <line class="psvg-axis" x1="-2" y1="0" x2="2" y2="0" stroke-width="0.045"/>
+      <line class="psvg-axis" x1="0" y1="-2" x2="0" y2="2" stroke-width="0.045"/>
+      <text class="psvg-axis-lbl" x="1.7"  y="0.32"  font-size="0.28">x</text>
+      <text class="psvg-axis-lbl" x="0.12" y="-1.6"  font-size="0.28">y</text>
+      <!-- Vector force line (color class toggled to psvg-force--a/--b/--c/--d in JS) -->
+      <line id="sv-force"  x1="0" y1="0" x2="1.2" y2="0"   stroke-width="0.08" stroke-linecap="round" opacity="0"/>
+      <!-- X component dashed (drawn first — Change 8 step 2) -->
+      <line id="sv-xcomp"  x1="0" y1="0" x2="1.2" y2="0"   stroke-width="0.055" stroke-dasharray="0.12,0.07" opacity="0"/>
+      <text id="sv-fx-label" class="psvg-leg-lbl" x="0" y="0" font-size="0.22" opacity="0">Fx</text>
+      <!-- Y component dashed (drawn second — Change 8 step 4) -->
+      <line id="sv-ycomp"  x1="1.2" y1="0" x2="1.2" y2="0" stroke-width="0.055" stroke-dasharray="0.12,0.07" opacity="0"/>
+      <text id="sv-fy-label" class="psvg-leg-lbl" x="0" y="0" font-size="0.22" opacity="0">Fy</text>
+      <!-- Drop lines -->
+      <line id="sv-drop-x" x1="1.2" y1="0.8" x2="1.2" y2="0"   stroke-width="0.03" stroke-dasharray="0.07,0.05" opacity="0"/>
+      <line id="sv-drop-y" x1="1.2" y1="0.8" x2="0"   y2="0.8" stroke-width="0.03" stroke-dasharray="0.07,0.05" opacity="0"/>
+      <!-- Angle arc (revealed last — Change 8 step 6, "show triangle") -->
+      <path id="sv-arc"   d="" stroke-width="0.035" fill="none" opacity="0"/>
+      <text id="sv-angle-lbl" x="0.45" y="-0.18" font-size="0.22" opacity="0">θ</text>
+    </svg>
+
+    <div class="popup-eqs" id="popup-eqs">
+      <div class="peq-row" id="px-formula" style="opacity:0">
+        <span class="peq-lhs" id="px-lhs">F<sub>x</sub></span>
+        <span class="peq-op">=</span>
+        <span class="peq-text">F · cos θ</span>
+      </div>
+      <div class="peq-row peq-sub" id="px-sub" style="opacity:0">
+        <span class="peq-lhs" id="px-sub-lhs">F<sub>x</sub></span>
+        <span class="peq-op">=</span>
+        <span class="peq-text" id="px-sub-val">…</span>
+      </div>
+      <div class="peq-row peq-result" id="px-result" style="opacity:0">
+        <span class="peq-lhs" id="px-res-lhs">F<sub>x</sub></span>
+        <span class="peq-op">=</span>
+        <span class="peq-answer" id="px-answer">—</span>
+        <span class="peq-unit">N</span>
+      </div>
+      <div class="peq-divider"></div>
+      <div class="peq-row" id="py-formula" style="opacity:0">
+        <span class="peq-lhs" id="py-lhs">F<sub>y</sub></span>
+        <span class="peq-op">=</span>
+        <span class="peq-text">F · sin θ</span>
+      </div>
+      <div class="peq-row peq-sub" id="py-sub" style="opacity:0">
+        <span class="peq-lhs" id="py-sub-lhs">F<sub>y</sub></span>
+        <span class="peq-op">=</span>
+        <span class="peq-text" id="py-sub-val">…</span>
+      </div>
+      <div class="peq-row peq-result" id="py-result" style="opacity:0">
+        <span class="peq-lhs" id="py-res-lhs">F<sub>y</sub></span>
+        <span class="peq-op">=</span>
+        <span class="peq-answer" id="py-answer">—</span>
+        <span class="peq-unit">N</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MOBILE NOTICE (platform contract §1.13 — dismissible, below 768px) ═══ -->
+<div id="mobile-notice" role="status">
+  <span>Best experienced on desktop.</span>
+  <button id="mobile-notice-close" type="button" aria-label="Dismiss">✕</button>
+</div>
+
+<script type="module" src="main.js"></script>
 </body>
 </html>
