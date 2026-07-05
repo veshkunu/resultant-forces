@@ -27,6 +27,15 @@ previously-competing interaction methods (an always-visible slider panel, canvas
 canvas-click-to-resolve) into one, on the premise that a student should never have to guess which
 input method is authoritative for a given change.
 
+Both card grids arrange their four cards in a 2×2 layout matching their quadrant roles (B/A over
+C/D) instead of a plain list — the card position itself is the quadrant cue, so no second
+coordinate system is drawn in the dashboard. The floating edit panel anchors to the workspace's
+bottom-right corner (fixed position regardless of which force is selected) rather than floating
+near the selected vector, so it never competes for space with the dashboard or drifts around the
+workspace. The accordion's `a-num`/`a-check` styling doubles as a progress stepper — current step
+blue, a step the learner has already left green-checked, an unvisited step grey — while keeping
+ADR-001's free-navigation behavior unchanged (any step can still be opened in any order).
+
 ## 2. Rendering approach
 
 Three.js with an `OrthographicCamera` — the simulation is a 2D engineering drawing, not a 3D

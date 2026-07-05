@@ -27,6 +27,7 @@ let geoSelected = null;     // 'A' | 'B' | 'C' | 'D' | null — selected Geometr
 let currentTimeline = null;
 let popupVisible = false;
 let simPaused = false;
+const visitedSections = new Set(); // drives the progress stepper's completed/future coloring (Change 6)
 
 const QUAD_NAME = { A: 'QI', B: 'QII', C: 'QIII', D: 'QIV' };
 
@@ -151,8 +152,16 @@ function resetComponentSelection() {
   document.querySelectorAll('.force-card[data-context="components"]').forEach(b => b.setAttribute('aria-pressed', 'false'));
 }
 
+function markVisited(sec) {
+  if (!sec) return;
+  visitedSections.add(sec);
+  const card = document.querySelector(`.a-card[data-sec="${sec}"]`);
+  if (card) card.dataset.done = '';
+}
+
 function openSection(sec) {
-  // Close previous
+  // Close previous, marking it as a completed step in the progress stepper (Change 6)
+  markVisited(activeSection);
   document.querySelectorAll('.a-card[data-open]').forEach(c => {
     delete c.dataset.open;
     c.querySelector('.a-head').setAttribute('aria-expanded', 'false');
@@ -163,6 +172,7 @@ function openSection(sec) {
   if (!card) return;
   card.dataset.open = '';
   card.querySelector('.a-head').setAttribute('aria-expanded', 'true');
+  card.scrollIntoView({ behavior: REDUCED_MOTION ? 'auto' : 'smooth', block: 'nearest' });
 
   resetGeoSelection();
   resetComponentSelection();
@@ -203,6 +213,7 @@ function openSection(sec) {
 }
 
 function closeSection() {
+  markVisited(activeSection);
   document.querySelectorAll('.a-card[data-open]').forEach(c => {
     delete c.dataset.open;
     c.querySelector('.a-head').setAttribute('aria-expanded', 'false');
@@ -701,6 +712,10 @@ function doReset() {
   resetGeoSelection();
   resetComponentSelection();
   closeSection();
+
+  visitedSections.clear();
+  document.querySelectorAll('.a-card[data-done]').forEach(c => delete c.dataset.done);
+
   openSection('geometry');
 }
 

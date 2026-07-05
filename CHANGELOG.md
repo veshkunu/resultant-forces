@@ -1,5 +1,34 @@
 # CHANGELOG.md — Resultant of Forces
 
+## 2026-07-05 — UI/UX refinement: quadrant-spatial cards, bottom-right editor, progress stepper
+
+Pure UI/UX polish on top of the interaction redesign below — no math, GSAP timeline, or
+architecture changes (`src/forces.js`/`src/scene.js` untouched).
+
+- **Quadrant-spatial card layout**: the Geometry and Component Resolution force-card grids
+  (`.force-card-grid`, shared by both sections) are now a 2×2 CSS grid — Force B/A on top,
+  C/D on bottom — so a card's position mirrors its quadrant (QII/QI over QIII/QIV) without
+  drawing a second coordinate system. `.force-card-body`'s three stats switched from a
+  side-by-side row to stacked label↔value rows so they stay readable at the narrower per-card
+  width. Selecting a card now also lifts slightly (`transform: translateY(-2px)`) in addition to
+  its existing blue outline/tint — elevation via transform, not a box-shadow, keeping persistent
+  chrome Flat-Ink/Border-Over-Shadow compliant (ADR-003).
+- **Floating edit panel repositioned**: `#force-edit-panel` now anchors to the workspace's
+  bottom-right corner (was left-center) and animates in with a fade + slide-up instead of a
+  horizontal slide. Same single reusable instance as before, just relocated; still a child of
+  `#workspace` so it can never cover the dashboard sidebar.
+- **Progress-colored accordion stepper**: a step is marked "completed" (`data-done`, existing
+  green-check styling) the moment the learner navigates away from it, not just when its GSAP
+  reveal timeline finishes — this now also covers Geometry and Component Resolution, which
+  previously never got a done state. A never-visited step is now visibly greyer than a completed
+  one (new CSS rule on `.a-title`/`.a-num`). Opening a step scrolls it into view
+  (`scrollIntoView`, respecting the existing `REDUCED_MOTION` flag). Reset clears all visited/done
+  state. **Free navigation is unchanged** — any step can still be opened in any order; this is
+  styling and bookkeeping only, not a locked Back/Next rebuild. No new ADR: ADR-001 stays
+  "Active" as originally decided.
+
+---
+
 ## 2026-07-04 — Interaction redesign: single sidebar-driven workflow, local-angle input
 
 Collapsed three competing ways to change a force (an always-visible slider panel, dragging a

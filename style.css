@@ -215,13 +215,15 @@ html, body {
 }
 
 /* Floating edit panel (Change 3) — the workspace's only floating control, shown only while a
-   Geometry force card is selected. Anchored to the left edge, vertically centered; slides in
-   via a transform/opacity transition (prefers-reduced-motion collapses it to instant, per the
-   global rule below). Treated as a transient overlay (Flat-Ink exception), same as the popup. */
+   Geometry force card is selected. Anchored to the bottom-right of the workspace (a child of
+   #workspace, not #app, so this is relative to the workspace box and can never cover the
+   dashboard sidebar); fades + slides up into place (prefers-reduced-motion collapses it to
+   instant, per the global rule below). Treated as a transient overlay (Flat-Ink exception),
+   same as the popup. */
 #force-edit-panel {
   position: absolute;
-  left: 20px;
-  top: 50%;
+  right: 20px;
+  bottom: 20px;
   width: 280px;
   background: var(--color-paper);
   border: 1px solid var(--color-border);
@@ -230,13 +232,13 @@ html, body {
   box-shadow: var(--shadow-md);
   z-index: 10;
   opacity: 0;
-  transform: translateY(-50%) translateX(-16px);
+  transform: translateY(24px);
   pointer-events: none;
   transition: opacity var(--dur-base) ease, transform var(--dur-base) ease;
 }
 #force-edit-panel[data-visible] {
   opacity: 1;
-  transform: translateY(-50%) translateX(0);
+  transform: translateY(0);
   pointer-events: auto;
 }
 
@@ -662,6 +664,14 @@ html, body {
   color: var(--color-accent);
 }
 
+/* Progress stepper (Change 6): current = blue (data-open, above), completed = green check
+   (data-done, above); a step never visited is dimmed further so "future" reads distinctly grey
+   next to a completed one. Free navigation is unchanged — this is styling only. */
+.a-card:not([data-open]):not([data-done]) .a-title,
+.a-card:not([data-open]):not([data-done]) .a-num {
+  color: var(--color-bench-grey);
+}
+
 /* Accordion body */
 .a-body {
   max-height: 0;
@@ -743,12 +753,19 @@ html, body {
 .c-moment{ color: var(--color-force-moment) !important; }
 
 /* Force cards — the sim's single selection surface, shared by Geometry (Change 2, with an
-   enable toggle) and Component Resolution (Change 7, read-only, no toggle). */
+   enable toggle) and Component Resolution (Change 7, read-only, no toggle). Arranged as a 2x2
+   quadrant-spatial grid (B/A top row, C/D bottom row) so card position itself reads as QII/QI
+   over QIII/QIV, without drawing a second coordinate system. */
 .force-card-grid {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas: "b a" "c d";
   gap: 8px;
 }
+.force-card[data-vec="A"] { grid-area: a; }
+.force-card[data-vec="B"] { grid-area: b; }
+.force-card[data-vec="C"] { grid-area: c; }
+.force-card[data-vec="D"] { grid-area: d; }
 
 .force-card {
   width: 100%;
@@ -763,7 +780,14 @@ html, body {
   .force-card:hover { background: color-mix(in srgb, var(--color-ink) 5%, var(--color-paper)); }
 }
 .force-card:active { transform: scale(0.98); }
-.force-card[aria-pressed="true"] { background: var(--color-accent-soft); border-color: var(--color-accent); }
+/* Selected state: blue outline + tint + a slight lift. Elevation is a transform, not a
+   box-shadow — persistent chrome stays Flat-Ink/Border-Over-Shadow compliant (ADR-003); only
+   transient overlays like the edit panel/popup get a shadow. */
+.force-card[aria-pressed="true"] {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent);
+  transform: translateY(-2px);
+}
 .force-card--off { opacity: 0.55; }
 
 .force-card-head {
@@ -786,13 +810,14 @@ html, body {
 
 .force-card-body {
   display: flex;
-  justify-content: space-between;
-  gap: 8px;
+  flex-direction: column;
+  gap: 4px;
 }
 .force-card-stat {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
 }
 .force-card-val {
   font-family: var(--font-mono);
